@@ -13,7 +13,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "TU_APIKEY",
+  apiKey: "AIzaSyC9eSx4-5wvNebk2pXFT8dcuRbJqJe9Qp4",
   authDomain: "cognicion-57052.firebaseapp.com",
   projectId: "cognicion-57052",
   storageBucket: "cognicion-57052.firebasestorage.app",
