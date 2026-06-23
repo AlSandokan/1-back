@@ -6,19 +6,57 @@
 
 <style>
 body {
+  margin: 0;
   text-align: center;
   font-family: Arial, sans-serif;
-  background: #f4f4f4;
+  background: #050505;
+  color: white;
 }
 
-h1 { margin-top: 25px; }
+#flashLeft, #flashRight {
+  position: fixed;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  z-index: 1;
+}
 
-.controls { margin: 20px; }
+#flashLeft { left: 0; }
+#flashRight { right: 0; }
+
+.flashCorrect {
+  background: rgba(34, 197, 94, 0.28);
+  opacity: 1 !important;
+}
+
+.flashWrong {
+  background: rgba(239, 68, 68, 0.28);
+  opacity: 1 !important;
+}
+
+.container {
+  position: relative;
+  z-index: 2;
+  padding-top: 25px;
+}
+
+.controls {
+  margin: 20px;
+}
 
 select, button {
   font-size: 18px;
   padding: 10px;
   margin: 6px;
+  border-radius: 10px;
+  border: none;
+}
+
+button {
+  cursor: pointer;
 }
 
 #grid {
@@ -32,23 +70,26 @@ select, button {
 .cell {
   width: 110px;
   height: 110px;
-  background: white;
-  border: 3px solid #333;
+  background: #111;
+  border: 3px solid #777;
   border-radius: 15px;
 }
 
-.active { background: #2563eb; }
+.active {
+  background: #2563eb;
+  box-shadow: 0 0 25px #2563eb;
+}
 
 #feedback {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: bold;
   margin-top: 20px;
   min-height: 35px;
 }
 
-.correcto { color: green; }
-.incorrecto { color: red; }
-.info { color: #2563eb; }
+.correcto { color: #22c55e; }
+.incorrecto { color: #ef4444; }
+.info { color: #60a5fa; }
 
 #resultado {
   font-size: 18px;
@@ -60,8 +101,13 @@ select, button {
 
 <body>
 
+<div id="flashLeft"></div>
+<div id="flashRight"></div>
+
+<div class="container">
+
 <h1>Dual N-Back</h1>
-<p><b>A</b> = coincide posición | <b>D</b> = coincide sonido</p>
+<p><b>A</b> = sonido / izquierda | <b>D</b> = posición / derecha</p>
 
 <div class="controls">
   <label>Nivel:</label>
@@ -82,8 +128,8 @@ select, button {
   <br>
 
   <button onclick="iniciar()">Iniciar</button>
-  <button onclick="responderVisual()">A - Posición</button>
-  <button onclick="responderAudio()">D - Sonido</button>
+  <button onclick="responderAudio()">A - Sonido</button>
+  <button onclick="responderVisual()">D - Posición</button>
 </div>
 
 <div id="grid">
@@ -95,6 +141,8 @@ select, button {
 <div id="feedback"></div>
 <p id="resultado">Presiona iniciar para comenzar.</p>
 
+</div>
+
 <script>
 const cells = document.querySelectorAll(".cell");
 const letras = ["A", "B", "C", "D", "E", "F", "G", "H"];
@@ -105,6 +153,7 @@ let indice = 0;
 let nivel = 1;
 let tiempo = 1500;
 let maxEnsayos = 20;
+let pruebaActiva = false;
 
 let visualAciertos = 0;
 let visualComision = 0;
@@ -128,6 +177,7 @@ function iniciar() {
   secuenciaVisual = [];
   secuenciaAudio = [];
   indice = 0;
+  pruebaActiva = true;
 
   visualAciertos = 0;
   visualComision = 0;
@@ -191,7 +241,7 @@ function mostrarEstimulo() {
 
   document.getElementById("resultado").innerText =
     "Ensayo " + (indice + 1) + " de " + maxEnsayos + "\n" +
-    "A = posición | D = sonido";
+    "A = sonido | D = posición";
 
   setTimeout(() => {
     evaluarSinRespuesta();
@@ -202,9 +252,12 @@ function mostrarEstimulo() {
 
 function hablar(letra) {
   speechSynthesis.cancel();
+
   let voz = new SpeechSynthesisUtterance(letra);
   voz.lang = "es-MX";
   voz.rate = 0.8;
+  voz.pitch = 1;
+
   speechSynthesis.speak(voz);
 }
 
@@ -224,33 +277,49 @@ function mostrarFeedback(texto, tipo) {
   feedback.className = tipo;
 }
 
-function responderVisual() {
-  if (respondioVisual || indice >= maxEnsayos) return;
+function flashLado(lado, correcto) {
+  let panel = lado === "izquierda"
+    ? document.getElementById("flashLeft")
+    : document.getElementById("flashRight");
 
-  respondioVisual = true;
-  trVisual.push(Date.now() - inicioEstimulo);
+  panel.className = correcto ? "flashCorrect" : "flashWrong";
 
-  if (coincideVisual()) {
-    visualAciertos++;
-    mostrarFeedback("A presionada: posición CORRECTA", "correcto");
-  } else {
-    visualComision++;
-    mostrarFeedback("A presionada: posición INCORRECTA", "incorrecto");
-  }
+  setTimeout(() => {
+    panel.className = "";
+  }, 350);
 }
 
 function responderAudio() {
-  if (respondioAudio || indice >= maxEnsayos) return;
+  if (!pruebaActiva || respondioAudio || indice >= maxEnsayos) return;
 
   respondioAudio = true;
   trAudio.push(Date.now() - inicioEstimulo);
 
   if (coincideAudio()) {
     audioAciertos++;
-    mostrarFeedback("D presionada: sonido CORRECTO", "correcto");
+    mostrarFeedback("A presionada: sonido CORRECTO", "correcto");
+    flashLado("izquierda", true);
   } else {
     audioComision++;
-    mostrarFeedback("D presionada: sonido INCORRECTO", "incorrecto");
+    mostrarFeedback("A presionada: sonido INCORRECTO", "incorrecto");
+    flashLado("izquierda", false);
+  }
+}
+
+function responderVisual() {
+  if (!pruebaActiva || respondioVisual || indice >= maxEnsayos) return;
+
+  respondioVisual = true;
+  trVisual.push(Date.now() - inicioEstimulo);
+
+  if (coincideVisual()) {
+    visualAciertos++;
+    mostrarFeedback("D presionada: posición CORRECTA", "correcto");
+    flashLado("derecha", true);
+  } else {
+    visualComision++;
+    mostrarFeedback("D presionada: posición INCORRECTA", "incorrecto");
+    flashLado("derecha", false);
   }
 }
 
@@ -265,6 +334,7 @@ function evaluarSinRespuesta() {
 }
 
 function finalizar() {
+  pruebaActiva = false;
   cells.forEach(c => c.classList.remove("active"));
 
   let totalVisual = secuenciaVisual.filter((pos, i) => {
@@ -298,32 +368,32 @@ function finalizar() {
     "Nivel: " + nivel + "-Back\n" +
     "Ensayos: " + maxEnsayos + "\n\n" +
 
-    "VISUAL / POSICIÓN\n" +
-    "Coincidencias reales: " + totalVisual + "\n" +
-    "Aciertos: " + visualAciertos + "\n" +
-    "Errores por comisión: " + visualComision + "\n" +
-    "Errores por omisión: " + visualOmision + "\n" +
-    "Precisión visual: " + precisionVisual + "%\n" +
-    "TR visual promedio: " + promedioVisual + " ms\n\n" +
-
-    "AUDITIVO / SONIDO\n" +
+    "SONIDO / A / IZQUIERDA\n" +
     "Coincidencias reales: " + totalAudio + "\n" +
     "Aciertos: " + audioAciertos + "\n" +
     "Errores por comisión: " + audioComision + "\n" +
     "Errores por omisión: " + audioOmision + "\n" +
-    "Precisión auditiva: " + precisionAudio + "%\n" +
-    "TR auditivo promedio: " + promedioAudio + " ms";
+    "Precisión sonido: " + precisionAudio + "%\n" +
+    "TR sonido promedio: " + promedioAudio + " ms\n\n" +
+
+    "POSICIÓN / D / DERECHA\n" +
+    "Coincidencias reales: " + totalVisual + "\n" +
+    "Aciertos: " + visualAciertos + "\n" +
+    "Errores por comisión: " + visualComision + "\n" +
+    "Errores por omisión: " + visualOmision + "\n" +
+    "Precisión posición: " + precisionVisual + "%\n" +
+    "TR posición promedio: " + promedioVisual + " ms";
 }
 
 document.addEventListener("keydown", function(event) {
   const tecla = event.key.toLowerCase();
 
   if (tecla === "a") {
-    responderVisual();
+    responderAudio();
   }
 
   if (tecla === "d") {
-    responderAudio();
+    responderVisual();
   }
 });
 </script>
