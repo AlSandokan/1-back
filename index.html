@@ -366,51 +366,9 @@ function iniciar() {
 
   document.getElementById("feedback").innerText = "";
   document.getElementById("resultado").innerText = "Prueba iniciada...";
- function mostrarEstimulo() {
-  if (!pruebaActiva) return;
-
-  if (indice >= maxEnsayos) {
-    finalizar();
-    return;
-  }
-
- function mostrarEstimulo() {
-  if (!pruebaActiva) return;
-
-  if (indice >= maxEnsayos) {
-    finalizar();
-    return;
-  }
-
-  cells.forEach(c => c.classList.remove("active"));
-
-  setTimeout(() => {
-    if (!pruebaActiva) return;
-
-    let posicionActual = secuenciaVisual[indice];
-    let letraActual = secuenciaAudio[indice];
-
-    cells[posicionActual].classList.add("active");
-    hablar(letraActual);
-
-    respondioVisual = false;
-    respondioAudio = false;
-    inicioEstimulo = Date.now();
-
-    document.getElementById("feedback").innerText = "";
-
-    document.getElementById("resultado").innerText =
-      "Ensayo " + (indice + 1) + " de " + maxEnsayos + "\n" +
-      "A = sonido | D = posición";
-
-    temporizador = setTimeout(() => {
-      evaluarSinRespuesta();
-      indice++;
-      mostrarEstimulo();
-    }, tiempo);
-
-  }, 250);
+  mostrarEstimulo();
 }
+
 function detener() {
   pruebaActiva = false;
   clearTimeout(temporizador);
