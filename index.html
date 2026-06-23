@@ -366,7 +366,45 @@ function iniciar() {
 
   document.getElementById("feedback").innerText = "";
   document.getElementById("resultado").innerText = "Prueba iniciada...";
-  mostrarEstimulo();
+ function mostrarEstimulo() {
+  if (!pruebaActiva) return;
+
+  if (indice >= maxEnsayos) {
+    finalizar();
+    return;
+  }
+
+  // Primero apagamos todas las celdas
+  cells.forEach(c => c.classList.remove("active"));
+
+  // Pequeña pausa para que se note si se repite la misma posición
+  setTimeout(() => {
+    if (!pruebaActiva) return;
+
+    let posicionActual = secuenciaVisual[indice];
+    let letraActual = secuenciaAudio[indice];
+
+    cells[posicionActual].classList.add("active");
+    hablar(letraActual);
+
+    respondioVisual = false;
+    respondioAudio = false;
+    inicioEstimulo = Date.now();
+
+    document.getElementById("feedback").innerText = "";
+
+    document.getElementById("resultado").innerText =
+      "Ensayo " + (indice + 1) + " de " + maxEnsayos + "\n" +
+      "A = sonido | D = posición";
+
+    temporizador = setTimeout(() => {
+      evaluarSinRespuesta();
+      indice++;
+      mostrarEstimulo();
+    }, tiempo);
+
+  }, 250);
+}
 }
 
 function detener() {
