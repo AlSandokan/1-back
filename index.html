@@ -7,10 +7,10 @@
 <style>
 body {
   margin: 0;
-  text-align: center;
-  font-family: Arial, sans-serif;
-  background: #050505;
+  background: #000000;
   color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
 }
 
 #flashLeft, #flashRight {
@@ -57,6 +57,11 @@ select, button {
 
 button {
   cursor: pointer;
+}
+
+.stop {
+  background: #991b1b;
+  color: white;
 }
 
 #grid {
@@ -128,6 +133,7 @@ button {
   <br>
 
   <button onclick="iniciar()">Iniciar</button>
+  <button class="stop" onclick="detener()">Detener</button>
   <button onclick="responderAudio()">A - Sonido</button>
   <button onclick="responderVisual()">D - Posición</button>
 </div>
@@ -154,6 +160,7 @@ let nivel = 1;
 let tiempo = 1500;
 let maxEnsayos = 20;
 let pruebaActiva = false;
+let temporizador = null;
 
 let visualAciertos = 0;
 let visualComision = 0;
@@ -171,6 +178,9 @@ let trVisual = [];
 let trAudio = [];
 
 function iniciar() {
+  clearTimeout(temporizador);
+  speechSynthesis.cancel();
+
   nivel = parseInt(document.getElementById("nivel").value);
   tiempo = parseInt(document.getElementById("tiempo").value);
 
@@ -197,6 +207,24 @@ function iniciar() {
   mostrarEstimulo();
 }
 
+function detener() {
+  pruebaActiva = false;
+  clearTimeout(temporizador);
+  speechSynthesis.cancel();
+
+  cells.forEach(c => c.classList.remove("active"));
+
+  document.getElementById("feedback").innerText = "Prueba detenida";
+  document.getElementById("feedback").className = "info";
+
+  document.getElementById("resultado").innerText =
+    "Ensayos completados: " + indice + " de " + maxEnsayos + "\n\n" +
+    "Sonido - aciertos: " + audioAciertos + "\n" +
+    "Sonido - errores: " + audioComision + "\n" +
+    "Posición - aciertos: " + visualAciertos + "\n" +
+    "Posición - errores: " + visualComision;
+}
+
 function generarSecuencias() {
   for (let i = 0; i < maxEnsayos; i++) {
     let posicion;
@@ -220,6 +248,8 @@ function generarSecuencias() {
 }
 
 function mostrarEstimulo() {
+  if (!pruebaActiva) return;
+
   if (indice >= maxEnsayos) {
     finalizar();
     return;
@@ -243,7 +273,7 @@ function mostrarEstimulo() {
     "Ensayo " + (indice + 1) + " de " + maxEnsayos + "\n" +
     "A = sonido | D = posición";
 
-  setTimeout(() => {
+  temporizador = setTimeout(() => {
     evaluarSinRespuesta();
     indice++;
     mostrarEstimulo();
@@ -388,13 +418,8 @@ function finalizar() {
 document.addEventListener("keydown", function(event) {
   const tecla = event.key.toLowerCase();
 
-  if (tecla === "a") {
-    responderAudio();
-  }
-
-  if (tecla === "d") {
-    responderVisual();
-  }
+  if (tecla === "a") responderAudio();
+  if (tecla === "d") responderVisual();
 });
 </script>
 
