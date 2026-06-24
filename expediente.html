@@ -2,12 +2,10 @@
 <html lang="es">
 
 <head>
-
 <meta charset="UTF-8">
 <title>Expediente</title>
 
 <style>
-
 body{
     background:#080808;
     color:white;
@@ -16,49 +14,33 @@ body{
 }
 
 .tarjeta{
-
     max-width:900px;
     margin:auto;
-
     background:#161616;
-
     border-radius:25px;
-
     padding:40px;
-
     border:1px solid #2a2a2a;
 }
 
 h1{
-
-font-size:45px;
-
+    font-size:45px;
 }
 
 .dato{
-
-margin-bottom:25px;
-
+    margin-bottom:25px;
 }
 
 label{
-
-color:#999;
-
-display:block;
-
-margin-bottom:6px;
-
+    color:#999;
+    display:block;
+    margin-bottom:6px;
 }
 
 .valor{
-
-font-size:22px;
-
+    font-size:22px;
+    white-space:pre-line;
 }
-
 </style>
-
 </head>
 
 <body>
@@ -69,35 +51,27 @@ font-size:22px;
 
 <div class="dato">
 <label>Nombre</label>
-<div class="valor" id="nombre">
-Cargando...
+<div class="valor" id="nombre">Cargando...</div>
 </div>
-</div>
-
 
 <div class="dato">
 <label>Diagnóstico</label>
-<div class="valor">
-Trastorno por déficit de atención e hiperactividad 
+<div class="valor" id="diagnostico">Cargando...</div>
 </div>
-</div>
-
 
 <div class="dato">
 <label>Tratamiento</label>
-<div class="valor">
-Escitalopram, tabletas de 10 mg. Tomar vía oral 1 vez al día. 2 tabletas por la mañana
-Bupropión, tabletas de 150 mg. Tomar vía oral 1 vez al día. 2 tabletas por la mañana
-Metilfenidato, tabletas de liberación prolongada de 54 mg. Tomar vía oral 1 vez al día. 1 tableta por la mañana
+<div class="valor" id="tratamiento">Cargando...</div>
 </div>
-</div>
-
 
 <div class="dato">
 <label>Médico tratante</label>
-<div class="valor">
-Dr. Aldo Sandokan Aguilar Valenzuela
+<div class="valor" id="medicoTratante">Cargando...</div>
 </div>
+
+<div class="dato">
+<label>Última consulta</label>
+<div class="valor" id="ultimaConsulta">Cargando...</div>
 </div>
 
 </div>
@@ -105,5 +79,4 @@ Dr. Aldo Sandokan Aguilar Valenzuela
 <script type="module" src="firebase.js"></script>
 
 </body>
-
 </html>
