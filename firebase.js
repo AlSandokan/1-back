@@ -84,3 +84,36 @@ window.iniciarSesion = async function(){
     }
 
 }
+import {
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+  getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+onAuthStateChanged(auth, async (user) => {
+  if (window.location.pathname.includes("dashboard.html")) {
+    if (user) {
+      const refUsuario = doc(db, "usuarios", user.uid);
+      const snap = await getDoc(refUsuario);
+
+      if (snap.exists()) {
+        document.getElementById("bienvenida").innerText =
+          "Bienvenido, " + snap.data().nombre;
+      } else {
+        document.getElementById("bienvenida").innerText =
+          "Bienvenido";
+      }
+
+    } else {
+      window.location.href = "login.html";
+    }
+  }
+});
+
+window.cerrarSesion = async function() {
+  await signOut(auth);
+  window.location.href = "login.html";
+}
