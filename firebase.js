@@ -222,4 +222,3 @@ pacientes.forEach((paciente) => {
   }
 });
 
-});
