@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<title>Expediente</title>
+
+<style>
+
+body{
+    background:#080808;
+    color:white;
+    font-family:Arial;
+    padding:50px;
+}
+
+.tarjeta{
+
+    max-width:900px;
+    margin:auto;
+
+    background:#161616;
+
+    border-radius:25px;
+
+    padding:40px;
+
+    border:1px solid #2a2a2a;
+}
+
+h1{
+
+font-size:45px;
+
+}
+
+.dato{
+
+margin-bottom:25px;
+
+}
+
+label{
+
+color:#999;
+
+display:block;
+
+margin-bottom:6px;
+
+}
+
+.valor{
+
+font-size:22px;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="tarjeta">
+
+<h1>📁 Expediente clínico</h1>
+
+<div class="dato">
+<label>Nombre</label>
+<div class="valor" id="nombre">
+Cargando...
+</div>
+</div>
+
+
+<div class="dato">
+<label>Diagnóstico</label>
+<div class="valor">
+Trastorno depresivo mayor
+</div>
+</div>
+
+
+<div class="dato">
+<label>Tratamiento</label>
+<div class="valor">
+Sertralina 50 mg/día
+</div>
+</div>
+
+
+<div class="dato">
+<label>Médico tratante</label>
+<div class="valor">
+Dr. Aldo Sandokan Aguilar Valenzuela
+</div>
+</div>
+
+</div>
+
+<script type="module" src="firebase.js"></script>
+
+</body>
+
+</html>
