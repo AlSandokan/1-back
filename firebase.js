@@ -18,7 +18,8 @@ import {
   collection,
   getDocs,
   query,
-  where
+  where,
+  orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -176,6 +177,9 @@ onAuthStateChanged(auth, async (user) => {
 
       selector.appendChild(opcion);
     });
+    selector.addEventListener("change", () => {
+  cargarHistorial(selector.value);
+});
   }
 
   if (window.location.pathname.includes("expediente.html")) {
@@ -208,3 +212,70 @@ onAuthStateChanged(auth, async (user) => {
   }
 
 });
+async function cargarHistorial(uidPaciente){
+
+    const contenedor =
+    document.getElementById("historialNotas");
+
+    contenedor.innerHTML = "";
+
+    const q = query(
+        collection(
+            db,
+            "usuarios",
+            uidPaciente,
+            "notasMedicas"
+        ),
+        orderBy("fecha","desc")
+    );
+
+    const notas = await getDocs(q);
+
+    if(notas.empty){
+
+        contenedor.innerHTML = `
+        <p style="color:#999">
+        No hay notas registradas
+        </p>
+        `;
+
+        return;
+    }
+
+    notas.forEach((nota)=>{
+
+        const datos = nota.data();
+
+        contenedor.innerHTML += `
+
+        <div style="
+        background:#0d0d0d;
+        border:1px solid #333;
+        border-radius:20px;
+        padding:25px;
+        margin-bottom:20px;
+        ">
+
+        <h3>${datos.fecha.substring(0,10)}</h3>
+
+        <p><b>Médico:</b> ${datos.autor}</p>
+
+        <p><b>Subjetivo:</b><br>
+        ${datos.subjetivo}</p>
+
+        <p><b>Objetivo:</b><br>
+        ${datos.objetivo}</p>
+
+        <p><b>Análisis:</b><br>
+        ${datos.analisis}</p>
+
+        <p><b>Plan:</b><br>
+        ${datos.plan}</p>
+
+        </div>
+
+        `;
+
+    });
+
+}
