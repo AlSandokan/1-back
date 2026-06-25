@@ -6,7 +6,8 @@ import {
 
 import {
   obtenerUsuario,
-  actualizarUsuario
+  actualizarUsuario,
+  solicitarEliminacionPaciente
 } from "./services/usuarios.js";
 
 let uidPaciente = "";
@@ -121,4 +122,31 @@ window.editarDatosPaciente = async function() {
 
 window.abrirNota = function() {
   window.location.href = "nota.html?id=" + uidPaciente;
+};
+
+window.solicitarEliminarPaciente = async function(){
+
+  const confirmar = confirm(
+    "¿Deseas suspender este paciente y solicitar eliminación al administrador?"
+  );
+
+  if(!confirmar) return;
+
+  try{
+
+    await solicitarEliminacionPaciente(
+      uidPaciente,
+      auth.currentUser.uid
+    );
+
+    alert("Paciente suspendido. Eliminación pendiente de autorización.");
+
+    window.location.href = "pacientes.html";
+
+  }catch(error){
+
+    alert(error.message);
+
+  }
+
 };
