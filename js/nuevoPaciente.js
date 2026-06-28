@@ -43,7 +43,10 @@ window.guardarPacienteNuevo = async function() {
     ultimaConsulta: document.getElementById("ultimaConsulta").value,
     tratamiento: document.getElementById("tratamiento").value,
     observaciones: document.getElementById("observaciones").value,
-    creadoPor: uidMedico
+    
+    creadoPor: uidMedico,
+    medicoTratanteUid: uidMedico,
+    medicosAutorizados: [uidMedico]
   };
 
   if (!paciente.nombre) {
