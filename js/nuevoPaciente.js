@@ -55,7 +55,7 @@ window.guardarPacienteNuevo = async function() {
     await crearPacienteProvisional(paciente);
 
     alert("Paciente creado correctamente");
-    window.location.href = "pacientes.html";
+    window.location.href = "medico.html";
 
   } catch(error) {
     alert("Error: " + error.message);

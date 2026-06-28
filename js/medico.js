@@ -88,24 +88,29 @@ function mostrarPacientes(pacientes) {
   lista.innerHTML = "";
 
   if (pacientes.length === 0) {
-    lista.innerHTML = "<p>No hay pacientes registrados.</p>";
+    lista.innerHTML = `
+      <p class="paciente-vacio">
+        No hay pacientes registrados.
+      </p>
+    `;
     return;
   }
 
   pacientes.forEach((paciente) => {
     const nombre = paciente.nombre || "Paciente sin nombre";
-    const edad = paciente.edad || "No registrada";
+    const edad = paciente.edad ? `${paciente.edad} años` : "No registrada";
+    const diagnostico = paciente.diagnostico || "Sin diagnóstico";
+    const ultimaConsulta = paciente.ultimaConsulta || "Sin registro";
+    const proximaConsulta = paciente.proximaConsulta || "Sin programar";
 
     lista.innerHTML += `
-      <div class="fila-paciente">
-        <a href="paciente.html?id=${paciente.id}" class="nombre-paciente">
-          ${nombre}
-        </a>
-
-        <span class="edad-paciente">
-          ${edad} años
-        </span>
-      </div>
+      <a class="fila-paciente" href="paciente.html?id=${paciente.id}">
+        <span class="paciente-nombre">${nombre}</span>
+        <span class="paciente-dato">${edad}</span>
+        <span class="paciente-dato">${diagnostico}</span>
+        <span class="paciente-dato">${ultimaConsulta}</span>
+        <span class="paciente-dato">${proximaConsulta}</span>
+      </a>
     `;
   });
 }
