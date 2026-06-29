@@ -330,6 +330,110 @@ function redondear(x) {
   return typeof x === "number" && Number.isFinite(x) ? Number(x.toFixed(4)) : x;
 }
 
+function logGamma(z) {
+  const coeficientes = [
+    676.5203681218851,
+    -1259.1392167224028,
+    771.3234287776531,
+    -176.6150291621406,
+    12.507343278686905,
+    -0.13857109526572012,
+    9.984369578019572e-6,
+    1.5056327351493116e-7
+  ];
+
+  if (z < 0.5) {
+    return Math.log(Math.PI) - Math.log(Math.sin(Math.PI * z)) - logGamma(1 - z);
+  }
+
+  let x = 0.9999999999998099;
+  const y = z - 1;
+  coeficientes.forEach((c, i) => {
+    x += c / (y + i + 1);
+  });
+  const t = y + coeficientes.length - 0.5;
+  return 0.5 * Math.log(2 * Math.PI) + (y + 0.5) * Math.log(t) - t + Math.log(x);
+}
+
+function betaContinua(x, a, b) {
+  const maxIteraciones = 120;
+  const epsilon = 1e-10;
+  const fpmin = 1e-30;
+  let qab = a + b;
+  let qap = a + 1;
+  let qam = a - 1;
+  let c = 1;
+  let d = 1 - qab * x / qap;
+  if (Math.abs(d) < fpmin) d = fpmin;
+  d = 1 / d;
+  let h = d;
+
+  for (let m = 1; m <= maxIteraciones; m++) {
+    const m2 = 2 * m;
+    let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+    d = 1 + aa * d;
+    if (Math.abs(d) < fpmin) d = fpmin;
+    c = 1 + aa / c;
+    if (Math.abs(c) < fpmin) c = fpmin;
+    d = 1 / d;
+    h *= d * c;
+
+    aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+    d = 1 + aa * d;
+    if (Math.abs(d) < fpmin) d = fpmin;
+    c = 1 + aa / c;
+    if (Math.abs(c) < fpmin) c = fpmin;
+    d = 1 / d;
+    const del = d * c;
+    h *= del;
+    if (Math.abs(del - 1) < epsilon) break;
+  }
+
+  return h;
+}
+
+function betaRegularizada(x, a, b) {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  const bt = Math.exp(logGamma(a + b) - logGamma(a) - logGamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+  if (x < (a + 1) / (a + b + 2)) {
+    return bt * betaContinua(x, a, b) / a;
+  }
+  return 1 - bt * betaContinua(1 - x, b, a) / b;
+}
+
+function cdfT(t, gl) {
+  if (!Number.isFinite(t) || !Number.isFinite(gl) || gl <= 0) return NaN;
+  const x = gl / (gl + t * t);
+  const ib = betaRegularizada(x, gl / 2, 0.5);
+  return t >= 0 ? 1 - ib / 2 : ib / 2;
+}
+
+function pTDosColas(t, gl) {
+  const p = 2 * (1 - cdfT(Math.abs(t), gl));
+  return Math.max(0, Math.min(1, p));
+}
+
+function tCritico(gl, alfa = 0.05) {
+  const objetivo = 1 - alfa / 2;
+  let bajo = 0;
+  let alto = 20;
+  while (cdfT(alto, gl) < objetivo && alto < 1e6) alto *= 2;
+  for (let i = 0; i < 80; i++) {
+    const medio = (bajo + alto) / 2;
+    if (cdfT(medio, gl) < objetivo) bajo = medio;
+    else alto = medio;
+  }
+  return (bajo + alto) / 2;
+}
+
+function interpretarP(p) {
+  if (!Number.isFinite(p)) return "No calculable con los datos disponibles.";
+  if (p < 0.001) return "Diferencia estadisticamente significativa (p < 0.001).";
+  if (p < 0.05) return `Diferencia estadisticamente significativa (p = ${redondear(p)}).`;
+  return `No se observa diferencia estadisticamente significativa (p = ${redondear(p)}).`;
+}
+
 function tablaHTML(filas) {
   ultimoResultado = filas;
   if (!filas.length) return "<p>No hay resultados.</p>";
@@ -404,18 +508,52 @@ function ttest() {
   const grupos = [...new Set(valores(x))].slice(0, 2);
   const a = datos.filter((d) => d[x] === grupos[0]).map((d) => Number(d[y])).filter((v) => !Number.isNaN(v));
   const b = datos.filter((d) => d[x] === grupos[1]).map((d) => Number(d[y])).filter((v) => !Number.isNaN(v));
-  const se = Math.sqrt(varianza(a) / a.length + varianza(b) / b.length);
-  const t = se ? (media(a) - media(b)) / se : 0;
+
+  if (grupos.length < 2 || a.length < 2 || b.length < 2) {
+    resultados.innerHTML = tablaHTML([{
+      variable: y,
+      grupo1: grupos[0] || "",
+      n1: a.length,
+      grupo2: grupos[1] || "",
+      n2: b.length,
+      interpretacion: "Se requieren dos grupos con al menos 2 valores numericos cada uno."
+    }]);
+    return;
+  }
+
+  const mediaA = media(a);
+  const mediaB = media(b);
+  const varA = varianza(a);
+  const varB = varianza(b);
+  const diferencia = mediaA - mediaB;
+  const se = Math.sqrt(varA / a.length + varB / b.length);
+  const t = se ? diferencia / se : 0;
+  const glNumerador = (varA / a.length + varB / b.length) ** 2;
+  const glDenominador = ((varA / a.length) ** 2) / (a.length - 1) + ((varB / b.length) ** 2) / (b.length - 1);
+  const gl = glDenominador ? glNumerador / glDenominador : a.length + b.length - 2;
+  const p = pTDosColas(t, gl);
+  const critico = tCritico(gl);
+  const icInf = diferencia - critico * se;
+  const icSup = diferencia + critico * se;
+  const dePooled = Math.sqrt(((a.length - 1) * varA + (b.length - 1) * varB) / (a.length + b.length - 2));
+  const dCohen = dePooled ? diferencia / dePooled : 0;
+
   resultados.innerHTML = tablaHTML([{
     variable: y,
     grupo1: grupos[0],
     n1: a.length,
-    media1: redondear(media(a)),
+    media1: redondear(mediaA),
     grupo2: grupos[1],
     n2: b.length,
-    media2: redondear(media(b)),
-    t_aprox: redondear(t),
-    interpretacion: "Use p exacta en paquete estadistico si se requiere reporte formal."
+    media2: redondear(mediaB),
+    diferencia_medias: redondear(diferencia),
+    t: redondear(t),
+    df: redondear(gl),
+    p: p < 0.001 ? "<0.001" : redondear(p),
+    ic95_inf: redondear(icInf),
+    ic95_sup: redondear(icSup),
+    cohens_d: redondear(dCohen),
+    interpretacion: interpretarP(p)
   }]);
 }
 
