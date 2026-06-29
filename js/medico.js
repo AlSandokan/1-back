@@ -71,7 +71,10 @@ async function cargarPacientes(uidMedico) {
   snapshot.forEach((docPaciente) => {
     const datos = docPaciente.data();
 
-    if (datos.rol === "paciente" && medicoPuedeVer(uidMedico, datos)) {
+    if (
+  datos.rol === "paciente" &&
+  datos.medicoTratanteUid === uidMedico
+        ) {
       pacientesGlobal.push({
         id: docPaciente.id,
         ...datos
