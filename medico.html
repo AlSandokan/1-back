@@ -8,7 +8,6 @@
 
 
 
-<body>
 <body class="bloqueado">
 <header class="header-medico">
   <h1>Panel Médico</h1>
@@ -86,18 +85,20 @@
         <div class="tabla-pacientes">
 
   <div class="encabezado-pacientes">
-    <span>Nombre</span>
-    <span>Edad</span>
-    <span>Diagnóstico</span>
-    <span>Última consulta</span>
-    <span>Próxima consulta</span>
-  </div>
+  <span class="celda-tabla">Nombre <button class="resizer" data-col="--col-nombre" aria-label="Ajustar columna Nombre"></button></span>
+  <span class="celda-tabla">Edad <button class="resizer" data-col="--col-edad" aria-label="Ajustar columna Edad"></button></span>
+  <span class="celda-tabla">Diagnóstico <button class="resizer" data-col="--col-diagnostico" aria-label="Ajustar columna Diagnóstico"></button></span>
+  <span class="celda-tabla">Última consulta <button class="resizer" data-col="--col-ultima" aria-label="Ajustar columna Última consulta"></button></span>
+  <span class="celda-tabla">Próxima consulta <button class="resizer" data-col="--col-proxima" aria-label="Ajustar columna Próxima consulta"></button></span>
+</div>
 
   <div id="listaPacientes" class="lista-pacientes">
     Cargando pacientes...
   </div>
 
 </div>
+
+      </div>
 
     </section>
 

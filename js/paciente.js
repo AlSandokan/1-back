@@ -17,6 +17,93 @@ import {
 
 let uidPaciente = "";
 
+function formatearDiagnostico(diagnostico) {
+  if (!diagnostico) return "Sin diagnostico";
+
+  if (typeof diagnostico === "string") {
+    return diagnostico.trim() || "Sin diagnostico";
+  }
+
+  if (typeof diagnostico === "object") {
+    const codigo = diagnostico.codigo ? `${diagnostico.codigo} - ` : "";
+    const texto =
+      diagnostico.texto ||
+      diagnostico.nombre ||
+      diagnostico.descripcion ||
+      "";
+
+    return `${codigo}${texto}`.trim() || "Sin diagnostico";
+  }
+
+  return String(diagnostico);
+}
+
+function claveDiagnostico(diagnostico) {
+  if (!diagnostico) return "";
+
+  if (typeof diagnostico === "object") {
+    return [
+      diagnostico.codigo || "",
+      diagnostico.texto || "",
+      diagnostico.nombre || ""
+    ].join("|");
+  }
+
+  return String(diagnostico);
+}
+
+function renderizarDiagnosticos(datos) {
+  const diagnosticoDiv = document.getElementById("diagnostico");
+
+  if (!diagnosticoDiv) return;
+
+  diagnosticoDiv.innerHTML = "";
+
+  const historial = Array.isArray(datos.historialDiagnosticos)
+    ? datos.historialDiagnosticos
+    : [];
+
+  const principal = datos.diagnostico || historial[historial.length - 1] || "";
+  const clavePrincipal = claveDiagnostico(principal);
+
+  if (historial.length === 0) {
+    const linea = document.createElement("div");
+    linea.className = "diagnostico-linea principal";
+    linea.textContent = formatearDiagnostico(principal);
+    diagnosticoDiv.appendChild(linea);
+    return;
+  }
+
+  historial.forEach((dx, index) => {
+    const esPrincipal = claveDiagnostico(dx) === clavePrincipal;
+    const linea = document.createElement("div");
+    linea.className = `diagnostico-linea${esPrincipal ? " principal" : ""}`;
+
+    const texto = document.createElement("span");
+    texto.textContent = formatearDiagnostico(dx);
+
+    const acciones = document.createElement("div");
+    acciones.className = "diagnostico-acciones";
+
+    if (esPrincipal) {
+      const etiqueta = document.createElement("span");
+      etiqueta.className = "diagnostico-principal-badge";
+      etiqueta.textContent = "Principal";
+      acciones.appendChild(etiqueta);
+    } else {
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.className = "boton-diagnostico-principal";
+      boton.textContent = "Marcar principal";
+      boton.addEventListener("click", () => window.marcarDiagnosticoPrincipal(index));
+      acciones.appendChild(boton);
+    }
+
+    linea.append(texto, acciones);
+    diagnosticoDiv.appendChild(linea);
+  });
+}
+
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = "login.html";
@@ -44,8 +131,7 @@ async function cargarDatosPaciente() {
   document.getElementById("correoPaciente").innerText =
     datos.email || "Sin correo";
 
-  document.getElementById("diagnostico").innerText =
-    datos.diagnostico || "Sin diagnóstico registrado";
+  renderizarDiagnosticos(datos);
 
   document.getElementById("tratamiento").innerText =
     datos.tratamiento || "Sin tratamiento registrado";
@@ -230,6 +316,26 @@ window.editarDatosPaciente = async function() {
   await cargarDatosPaciente();
 
   alert("Datos actualizados");
+};
+
+window.marcarDiagnosticoPrincipal = async function(index) {
+  const datos = await obtenerUsuario(uidPaciente);
+  const historial = Array.isArray(datos?.historialDiagnosticos)
+    ? datos.historialDiagnosticos
+    : [];
+
+  const diagnostico = historial[index];
+
+  if (!diagnostico) {
+    alert("No se encontro el diagnostico seleccionado.");
+    return;
+  }
+
+  await actualizarUsuario(uidPaciente, {
+    diagnostico
+  });
+
+  await cargarDatosPaciente();
 };
 
 window.abrirNota = function() {

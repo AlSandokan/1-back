@@ -118,16 +118,35 @@ button:hover{
 }
 
 .grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:24px;
+    display:block;
 }
 
-.dato{
-    padding:18px;
-    border-radius:18px;
-    background:rgba(0,0,0,0.25);
-    border:1px solid rgba(255,255,255,0.08);
+.dato,
+.dato-card{
+    padding:18px 0;
+    border-bottom:1px solid rgba(255,255,255,0.14);
+    background:transparent;
+    border-radius:0;
+}
+
+.dato:last-child,
+.dato-card:last-child{
+    border-bottom:none;
+}
+
+.dato label,
+.dato-card span{
+    color:#9ca3af;
+    display:block;
+    margin-bottom:8px;
+    font-size:14px;
+}
+
+.dato div,
+.dato-card strong{
+    font-size:19px;
+    line-height:1.5;
+    font-weight:400;
 }
 
 .dato label{
@@ -155,4 +174,55 @@ button:hover{
     h1{
         font-size:38px;
     }
+}
+
+
+
+.diagnostico-linea {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid #333;
+  font-size: 15px;
+}
+
+.diagnostico-linea:last-child {
+  border-bottom: none;
+}
+
+.diagnostico-linea.principal {
+  color: #e0f2fe;
+}
+
+.diagnostico-acciones {
+  flex-shrink: 0;
+}
+
+.diagnostico-principal-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.boton-diagnostico-principal {
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.08);
+  color: white;
+  font-size: 12px;
+}
+
+.boton-diagnostico-principal:hover {
+  background: white;
+  color: black;
 }

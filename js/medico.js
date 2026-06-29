@@ -24,6 +24,7 @@ onAuthStateChanged(auth, async (user) => {
   const accesoPermitido = await cargarPerfilMedico(user);
 
   if (!accesoPermitido) return;
+
   document.body.classList.remove("bloqueado");
 
   console.log("UID del médico:", user.uid);
@@ -104,6 +105,69 @@ async function cargarPacientes(uidMedico) {
   calcularEstadisticas(pacientesGlobal);
 }
 
+function formatearDiagnostico(diagnostico) {
+  if (!diagnostico) return "Sin diagnóstico";
+
+  if (typeof diagnostico === "string") {
+    return diagnostico.trim() || "Sin diagnóstico";
+  }
+
+  if (typeof diagnostico === "object") {
+    const codigo = diagnostico.codigo ? `${diagnostico.codigo} - ` : "";
+    const texto =
+      diagnostico.texto ||
+      diagnostico.nombre ||
+      diagnostico.descripcion ||
+      "";
+
+    return `${codigo}${texto}`.trim() || "Sin diagnóstico";
+  }
+
+  return String(diagnostico);
+}
+
+function claveDiagnostico(diagnostico) {
+  if (!diagnostico) return "";
+
+  if (typeof diagnostico === "object") {
+    return [
+      diagnostico.codigo || "",
+      diagnostico.texto || "",
+      diagnostico.nombre || ""
+    ].join("|");
+  }
+
+  return String(diagnostico);
+}
+
+function obtenerDiagnosticosPaciente(paciente) {
+  const historial = Array.isArray(paciente.historialDiagnosticos)
+    ? paciente.historialDiagnosticos
+    : [];
+
+  const principal =
+    paciente.diagnostico ||
+    historial[historial.length - 1] ||
+    "";
+
+  const clavePrincipal = claveDiagnostico(principal);
+  const secundarios = historial.filter(
+    (diagnostico) => claveDiagnostico(diagnostico) !== clavePrincipal
+  );
+
+  if (historial.length === 0 && paciente.diagnostico) {
+    return {
+      principal,
+      secundarios: []
+    };
+  }
+
+  return {
+    principal,
+    secundarios
+  };
+}
+
 function mostrarPacientes(pacientes) {
   const lista = document.getElementById("listaPacientes");
   lista.innerHTML = "";
@@ -120,7 +184,21 @@ function mostrarPacientes(pacientes) {
   pacientes.forEach((paciente) => {
     const nombre = paciente.nombre || "Paciente sin nombre";
     const edad = paciente.edad ? `${paciente.edad} años` : "No registrada";
-    const diagnostico = paciente.diagnostico || "Sin diagnóstico";
+    const diagnosticos = obtenerDiagnosticosPaciente(paciente);
+    const diagnosticoPrincipal = formatearDiagnostico(diagnosticos.principal);
+    const diagnosticosSecundarios = diagnosticos.secundarios
+      .map(formatearDiagnostico)
+      .filter(Boolean);
+    const secundariosHtml = diagnosticosSecundarios.length > 0
+      ? `
+        <div class="diagnosticos-secundarios">
+          <span class="diagnosticos-secundarios-titulo">Secundarios</span>
+          ${diagnosticosSecundarios
+            .map((diagnostico) => `<span>${diagnostico}</span>`)
+            .join("")}
+        </div>
+      `
+      : "";
     const ultimaConsulta = paciente.ultimaConsulta || "Sin registro";
     const proximaConsulta = paciente.proximaConsulta || "Sin programar";
 
@@ -128,7 +206,12 @@ function mostrarPacientes(pacientes) {
       <a class="fila-paciente" href="paciente.html?id=${paciente.id}">
         <span class="paciente-nombre">${nombre}</span>
         <span class="paciente-dato">${edad}</span>
-        <span class="paciente-dato">${diagnostico}</span>
+        <span class="paciente-dato diagnostico-columna">
+        <span class="diagnostico-texto">
+          <span class="diagnostico-principal">${diagnosticoPrincipal}</span>
+          ${secundariosHtml}
+        </span>
+        </span>
         <span class="paciente-dato">${ultimaConsulta}</span>
         <span class="paciente-dato">${proximaConsulta}</span>
       </a>
@@ -165,3 +248,60 @@ function calcularEstadisticas(pacientes) {
 
   document.getElementById("expedientesHoy").textContent = 0;
 }
+
+document.addEventListener("click", (e) => {
+  const diagnosticoTexto = e.target.closest(".diagnostico-texto");
+
+  if (!diagnosticoTexto) return;
+
+  // Evita que al hacer clic se abra el expediente del paciente
+  e.preventDefault();
+  e.stopPropagation();
+
+  diagnosticoTexto.classList.toggle("expandido");
+
+});
+
+let columnaActual = null;
+let tablaActual = null;
+let inicioX = 0;
+let anchoInicial = 0;
+
+document.querySelectorAll(".resizer").forEach((resizer) => {
+  resizer.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    tablaActual = resizer.closest(".tabla-pacientes");
+    columnaActual = resizer.dataset.col;
+    inicioX = e.clientX;
+
+    anchoInicial = parseFloat(
+      getComputedStyle(tablaActual)
+        .getPropertyValue(columnaActual)
+    );
+
+    tablaActual.classList.add("redimensionando");
+  });
+});
+
+document.addEventListener("mousemove", (e) => {
+  if (!columnaActual || !tablaActual) return;
+
+  const diferencia = e.clientX - inicioX;
+  const nuevoAncho = Math.max(80, anchoInicial + diferencia);
+
+  tablaActual.style.setProperty(
+    columnaActual,
+    `${nuevoAncho}px`
+  );
+});
+
+document.addEventListener("mouseup", () => {
+  if (tablaActual) {
+    tablaActual.classList.remove("redimensionando");
+  }
+
+  columnaActual = null;
+  tablaActual = null;
+});

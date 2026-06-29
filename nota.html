@@ -30,8 +30,24 @@
 
 </div>
 
-<label>Diagnóstico visible para paciente</label>
-<input id="diagnostico" placeholder="Ej. Trastorno por déficit de atención e hiperactividad">
+<label for="buscadorDiagnostico">Diagnóstico visible para paciente (CIE-10)</label>
+
+<input
+    id="buscadorDiagnostico"
+    type="text"
+    placeholder="Buscar por código o diagnóstico. Ej. F33.2 o depresivo"
+    autocomplete="off"
+>
+
+<div id="resultadosCIE10"></div>
+
+<input type="hidden" id="cie10Codigo">
+<input type="hidden" id="cie10Nombre">
+
+<h3>Diagnósticos seleccionados</h3>
+<div id="diagnosticosSeleccionados"></div>
+
+
 
 <label>Tratamiento visible para paciente</label>
 <textarea id="tratamiento" placeholder="Medicamentos actuales"></textarea>
