@@ -1,10 +1,6 @@
-import {
-  medicoPuedeVer
-} from "./services/usuarios.js";
+import { medicoPuedeVer } from "./services/usuarios.js";
 
 import { auth, db } from "./firebase.js";
-
-
 
 import {
   onAuthStateChanged
@@ -31,16 +27,19 @@ onAuthStateChanged(auth, async (user) => {
 
   console.log("UID del médico:", user.uid);
 
-await cargarPacientes(user.uid);
+  await cargarPacientes(user.uid);
 
-  document
-    .getElementById("buscadorPacientes")
-    .addEventListener("input", filtrarPacientes);
+  const buscador = document.getElementById("buscadorPacientes");
+
+  if (buscador) {
+    buscador.addEventListener("input", filtrarPacientes);
+  }
 });
 
 async function cargarPerfilMedico(user) {
   const correo = user.email;
-  document.getElementById("correoMedico").textContent = correo;
+
+  document.getElementById("correoMedico").textContent = correo || "";
 
   const inicial = correo ? correo.charAt(0).toUpperCase() : "M";
   document.getElementById("avatarMedico").textContent = inicial;
@@ -48,26 +47,26 @@ async function cargarPerfilMedico(user) {
   const refUsuario = doc(db, "usuarios", user.uid);
   const snapUsuario = await getDoc(refUsuario);
 
-  if (snapUsuario.exists()) {
-    const datos = snapUsuario.data();
-
-    if (datos.rol !== "medico") {
-      alert("Acceso restringido al personal médico.");
-      await auth.signOut();
-      window.location.href = "login.html";
+  if (!snapUsuario.exists()) {
+    alert("Tu cuenta no está registrada en Cognición.");
+    await auth.signOut();
+    window.location.href = "login.html";
     return false;
   }
 
-    document.getElementById("nombreMedico").textContent =
-      datos.nombre || "Médico sin nombre";
-  } else {
-  alert("Tu cuenta no está registrada en Cognición.");
-  await auth.signOut();
-  window.location.href = "login.html";
-  return false;
-}
+  const datos = snapUsuario.data();
 
-return true;
+  if (datos.rol !== "medico") {
+    alert("Acceso restringido al personal médico.");
+    await auth.signOut();
+    window.location.href = "login.html";
+    return false;
+  }
+
+  document.getElementById("nombreMedico").textContent =
+    datos.nombre || "Médico sin nombre";
+
+  return true;
 }
 
 async function cargarPacientes(uidMedico) {
@@ -84,10 +83,7 @@ async function cargarPacientes(uidMedico) {
 
     if (datos.rol !== "paciente") continue;
 
-    const puedeVer = await medicoPuedeVer(
-      uidMedico,
-      docPaciente.id
-    );
+    const puedeVer = await medicoPuedeVer(uidMedico, docPaciente.id);
 
     if (puedeVer) {
       pacientesGlobal.push({
@@ -140,10 +136,8 @@ function mostrarPacientes(pacientes) {
 }
 
 function filtrarPacientes() {
-  const texto = document
-    .getElementById("buscadorPacientes")
-    .value
-    .toLowerCase();
+  const buscador = document.getElementById("buscadorPacientes");
+  const texto = buscador ? buscador.value.toLowerCase() : "";
 
   const filtrados = pacientesGlobal.filter((paciente) => {
     const nombre = (paciente.nombre || "").toLowerCase();
@@ -168,7 +162,5 @@ function calcularEstadisticas(pacientes) {
   document.getElementById("pacientesActivos").textContent = activos;
   document.getElementById("pacientesPendientes").textContent = pendientes;
 
-  // Por ahora queda en 0.
-  // Después lo conectamos a una colección de notas clínicas.
   document.getElementById("expedientesHoy").textContent = 0;
 }
