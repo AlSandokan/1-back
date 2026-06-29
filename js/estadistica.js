@@ -1,0 +1,474 @@
+import { auth, db } from "./firebase.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { medicoPuedeVer, obtenerUsuario } from "./services/usuarios.js";
+
+let datos = [];
+let columnas = [];
+let ultimoResultado = [];
+
+const entrada = document.getElementById("entradaDatos");
+const archivo = document.getElementById("archivoDatos");
+const resumenDatos = document.getElementById("resumenDatos");
+const resultados = document.getElementById("resultados");
+const variableY = document.getElementById("variableY");
+const variableX = document.getElementById("variableX");
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  const usuario = await obtenerUsuario(user.uid);
+
+  if (!usuario || usuario.rol !== "medico") {
+    alert("Acceso restringido al personal medico.");
+    window.location.href = "dashboard.html";
+    return;
+  }
+
+  document.body.classList.remove("bloqueado");
+});
+
+function parsearTabla(texto) {
+  const lineas = texto.trim().split(/\r?\n/).filter(Boolean);
+  if (lineas.length < 2) return [];
+  const separador = lineas[0].includes("\t") ? "\t" : ",";
+  const encabezados = lineas[0].split(separador).map((x) => x.trim());
+
+  return lineas.slice(1).map((linea) => {
+    const valores = linea.split(separador).map((x) => x.trim());
+    return encabezados.reduce((fila, col, i) => {
+      const numero = Number(valores[i]);
+      fila[col] = valores[i] !== "" && !Number.isNaN(numero) ? numero : valores[i] || "";
+      return fila;
+    }, {});
+  });
+}
+
+function cargarDatos() {
+  datos = aplicarFiltro(parsearTabla(entrada.value));
+  columnas = datos.length ? Object.keys(datos[0]) : [];
+  llenarSelects();
+  resumenDatos.textContent = `${datos.length} filas, ${columnas.length} variables.`;
+  resultados.textContent = "Datos cargados. Selecciona un analisis.";
+  dibujarGraficasAutomaticas();
+}
+
+function calcularEdad(fechaNacimiento) {
+  if (!fechaNacimiento) return "";
+  const nacimiento = new Date(`${fechaNacimiento}T00:00:00`);
+  if (Number.isNaN(nacimiento.getTime())) return "";
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - nacimiento.getFullYear();
+  const mes = hoy.getMonth() - nacimiento.getMonth();
+  if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) edad -= 1;
+  return edad >= 0 ? edad : "";
+}
+
+function diagnosticoPrincipalTexto(paciente) {
+  const dx = paciente.diagnostico ||
+    (Array.isArray(paciente.historialDiagnosticos)
+      ? paciente.historialDiagnosticos[paciente.historialDiagnosticos.length - 1]
+      : "");
+
+  if (!dx) return "";
+  if (typeof dx === "string") return dx;
+  return dx.codigo || dx.nombre || dx.texto || "";
+}
+
+async function cargarPacientesDelMedico() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  resultados.textContent = "Cargando pacientes autorizados...";
+
+  const snapshot = await getDocs(collection(db, "usuarios"));
+  const filas = [];
+
+  for (const docPaciente of snapshot.docs) {
+    const paciente = docPaciente.data();
+    if (paciente.rol !== "paciente") continue;
+
+    const puedeVer = await medicoPuedeVer(user.uid, docPaciente.id);
+    if (!puedeVer) continue;
+
+    filas.push({
+      id: docPaciente.id,
+      nombre: paciente.nombre || "",
+      edad: calcularEdad(paciente.fechaNacimiento) || Number(paciente.edad) || "",
+      sexo: paciente.sexo || "",
+      estado: paciente.estado || "activo",
+      diagnostico: diagnosticoPrincipalTexto(paciente),
+      catalogo: paciente.diagnostico?.catalogo || paciente.diagnosticoCatalogoVisible || "auto",
+      ultimaConsulta: paciente.ultimaConsulta || "",
+      proximaConsulta: paciente.proximaConsulta || "",
+      tieneTratamiento: paciente.tratamiento ? 1 : 0,
+      numDiagnosticos: Array.isArray(paciente.historialDiagnosticos) ? paciente.historialDiagnosticos.length : (paciente.diagnostico ? 1 : 0)
+    });
+  }
+
+  datos = filas;
+  columnas = datos.length ? Object.keys(datos[0]) : [];
+  entrada.value = [
+    columnas.join(","),
+    ...datos.map((fila) => columnas.map((col) => fila[col]).join(","))
+  ].join("\n");
+  llenarSelects();
+  resumenDatos.textContent = `${datos.length} pacientes autorizados cargados desde Firestore.`;
+  resultados.textContent = "Datos clinicos cargados. Selecciona un analisis o grafica.";
+  dibujarGraficasAutomaticas();
+}
+
+function aplicarFiltro(filas) {
+  const filtro = document.getElementById("filtroTexto").value.trim();
+  if (!filtro || !filtro.includes("=")) return filas;
+  const [campo, valor] = filtro.split("=").map((x) => x.trim());
+  return filas.filter((fila) => String(fila[campo]) === valor);
+}
+
+function llenarSelects() {
+  [variableY, variableX].forEach((select) => {
+    select.innerHTML = "";
+    columnas.forEach((col) => {
+      const opcion = document.createElement("option");
+      opcion.value = col;
+      opcion.textContent = col;
+      select.appendChild(opcion);
+    });
+  });
+}
+
+function numeros(col) {
+  return datos.map((fila) => Number(fila[col])).filter((x) => !Number.isNaN(x));
+}
+
+function valores(col) {
+  return datos.map((fila) => fila[col]).filter((x) => x !== "");
+}
+
+function media(arr) {
+  return arr.reduce((a, b) => a + b, 0) / arr.length;
+}
+
+function mediana(arr) {
+  const orden = [...arr].sort((a, b) => a - b);
+  const mitad = Math.floor(orden.length / 2);
+  return orden.length % 2 ? orden[mitad] : (orden[mitad - 1] + orden[mitad]) / 2;
+}
+
+function varianza(arr) {
+  if (arr.length < 2) return 0;
+  const m = media(arr);
+  return arr.reduce((s, x) => s + (x - m) ** 2, 0) / (arr.length - 1);
+}
+
+function percentil(arr, p) {
+  const orden = [...arr].sort((a, b) => a - b);
+  const pos = (orden.length - 1) * p;
+  const base = Math.floor(pos);
+  const resto = pos - base;
+  return orden[base + 1] !== undefined
+    ? orden[base] + resto * (orden[base + 1] - orden[base])
+    : orden[base];
+}
+
+function redondear(x) {
+  return typeof x === "number" && Number.isFinite(x) ? Number(x.toFixed(4)) : x;
+}
+
+function tablaHTML(filas) {
+  ultimoResultado = filas;
+  if (!filas.length) return "<p>No hay resultados.</p>";
+  const cols = Object.keys(filas[0]);
+  return `
+    <table>
+      <thead><tr>${cols.map((c) => `<th>${c}</th>`).join("")}</tr></thead>
+      <tbody>
+        ${filas.map((fila) => `
+          <tr>${cols.map((c) => `<td>${fila[c]}</td>`).join("")}</tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+function descriptivos() {
+  const filas = columnas
+    .map((col) => ({ col, arr: numeros(col) }))
+    .filter((item) => item.arr.length)
+    .map(({ col, arr }) => {
+      const de = Math.sqrt(varianza(arr));
+      return {
+        variable: col,
+        n: arr.length,
+        media: redondear(media(arr)),
+        mediana: redondear(mediana(arr)),
+        de: redondear(de),
+        varianza: redondear(varianza(arr)),
+        min: Math.min(...arr),
+        p25: redondear(percentil(arr, 0.25)),
+        p75: redondear(percentil(arr, 0.75)),
+        max: Math.max(...arr),
+        ic95_inf: redondear(media(arr) - 1.96 * de / Math.sqrt(arr.length)),
+        ic95_sup: redondear(media(arr) + 1.96 * de / Math.sqrt(arr.length))
+      };
+    });
+  resultados.innerHTML = tablaHTML(filas);
+}
+
+function frecuencias() {
+  const col = variableY.value;
+  const total = valores(col).length;
+  const conteo = {};
+  valores(col).forEach((v) => conteo[v] = (conteo[v] || 0) + 1);
+  resultados.innerHTML = tablaHTML(Object.entries(conteo).map(([valor, n]) => ({
+    variable: col,
+    valor,
+    n,
+    porcentaje: redondear(n * 100 / total)
+  })));
+}
+
+function tablaCruzada() {
+  const y = variableY.value;
+  const x = variableX.value;
+  const gruposX = [...new Set(valores(x))];
+  const gruposY = [...new Set(valores(y))];
+  const filas = gruposY.map((gy) => {
+    const fila = { [y]: gy };
+    gruposX.forEach((gx) => {
+      fila[gx] = datos.filter((d) => d[y] === gy && d[x] === gx).length;
+    });
+    return fila;
+  });
+  resultados.innerHTML = tablaHTML(filas);
+}
+
+function ttest() {
+  const y = variableY.value;
+  const x = variableX.value;
+  const grupos = [...new Set(valores(x))].slice(0, 2);
+  const a = datos.filter((d) => d[x] === grupos[0]).map((d) => Number(d[y])).filter((v) => !Number.isNaN(v));
+  const b = datos.filter((d) => d[x] === grupos[1]).map((d) => Number(d[y])).filter((v) => !Number.isNaN(v));
+  const se = Math.sqrt(varianza(a) / a.length + varianza(b) / b.length);
+  const t = se ? (media(a) - media(b)) / se : 0;
+  resultados.innerHTML = tablaHTML([{
+    variable: y,
+    grupo1: grupos[0],
+    n1: a.length,
+    media1: redondear(media(a)),
+    grupo2: grupos[1],
+    n2: b.length,
+    media2: redondear(media(b)),
+    t_aprox: redondear(t),
+    interpretacion: "Use p exacta en paquete estadistico si se requiere reporte formal."
+  }]);
+}
+
+function chi2() {
+  const y = variableY.value;
+  const x = variableX.value;
+  const xs = [...new Set(valores(x))];
+  const ys = [...new Set(valores(y))];
+  const matriz = ys.map((yy) => xs.map((xx) => datos.filter((d) => d[y] === yy && d[x] === xx).length));
+  const total = matriz.flat().reduce((a, b) => a + b, 0);
+  const filas = matriz.map((r) => r.reduce((a, b) => a + b, 0));
+  const cols = xs.map((_, j) => matriz.reduce((a, r) => a + r[j], 0));
+  let chi = 0;
+  matriz.forEach((r, i) => r.forEach((obs, j) => {
+    const esp = filas[i] * cols[j] / total;
+    chi += esp ? (obs - esp) ** 2 / esp : 0;
+  }));
+  resultados.innerHTML = tablaHTML([{ chi2: redondear(chi), gl: (xs.length - 1) * (ys.length - 1), n: total }]);
+}
+
+function correlacion() {
+  const x = numeros(variableX.value);
+  const y = numeros(variableY.value);
+  const n = Math.min(x.length, y.length);
+  const xs = x.slice(0, n);
+  const ys = y.slice(0, n);
+  const mx = media(xs);
+  const my = media(ys);
+  const cov = xs.reduce((s, xi, i) => s + (xi - mx) * (ys[i] - my), 0);
+  const den = Math.sqrt(xs.reduce((s, xi) => s + (xi - mx) ** 2, 0) * ys.reduce((s, yi) => s + (yi - my) ** 2, 0));
+  resultados.innerHTML = tablaHTML([{ x: variableX.value, y: variableY.value, n, r_pearson: redondear(cov / den) }]);
+}
+
+function regresion() {
+  const x = numeros(variableX.value);
+  const y = numeros(variableY.value);
+  const n = Math.min(x.length, y.length);
+  const xs = x.slice(0, n);
+  const ys = y.slice(0, n);
+  const mx = media(xs);
+  const my = media(ys);
+  const b = xs.reduce((s, xi, i) => s + (xi - mx) * (ys[i] - my), 0) / xs.reduce((s, xi) => s + (xi - mx) ** 2, 0);
+  const a = my - b * mx;
+  resultados.innerHTML = tablaHTML([{ y: variableY.value, x: variableX.value, intercepto: redondear(a), beta: redondear(b), formula: `${variableY.value} = ${redondear(a)} + ${redondear(b)}*${variableX.value}` }]);
+}
+
+function diagnostica() {
+  const prueba = variableY.value;
+  const estado = variableX.value;
+  const umbral = Number(document.getElementById("umbral").value);
+  let vp = 0, fp = 0, vn = 0, fn = 0;
+  datos.forEach((d) => {
+    const positivo = Number(d[prueba]) >= umbral;
+    const enfermo = Number(d[estado]) === 1 || String(d[estado]).toLowerCase() === "si";
+    if (positivo && enfermo) vp++;
+    if (positivo && !enfermo) fp++;
+    if (!positivo && !enfermo) vn++;
+    if (!positivo && enfermo) fn++;
+  });
+  resultados.innerHTML = tablaHTML([{
+    vp, fp, vn, fn,
+    sensibilidad: redondear(vp / (vp + fn)),
+    especificidad: redondear(vn / (vn + fp)),
+    vpp: redondear(vp / (vp + fp)),
+    vpn: redondear(vn / (vn + fn))
+  }]);
+}
+
+function normalidad() {
+  const col = variableY.value;
+  const arr = numeros(col);
+  const m = media(arr);
+  const de = Math.sqrt(varianza(arr));
+  const asimetria = arr.reduce((s, x) => s + ((x - m) / de) ** 3, 0) / arr.length;
+  resultados.innerHTML = tablaHTML([{ variable: col, n: arr.length, asimetria_aprox: redondear(asimetria), nota: "Tamiz exploratorio; confirmar con Shapiro-Wilk si se requiere publicacion." }]);
+}
+
+function riesgo() {
+  diagnostica();
+  const r = ultimoResultado[0];
+  const rr = (r.vp / (r.vp + r.fn)) / (r.fp / (r.fp + r.vn));
+  const or = (r.vp * r.vn) / (r.fp * r.fn);
+  resultados.innerHTML = tablaHTML([{ ...r, riesgo_relativo: redondear(rr), odds_ratio: redondear(or) }]);
+}
+
+function conteo(col) {
+  return valores(col).reduce((acc, valor) => {
+    acc[valor || "Sin registro"] = (acc[valor || "Sin registro"] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function prepararCanvas(id) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return null;
+  const ctx = canvas.getContext("2d");
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const cssHeight = Number(canvas.getAttribute("height")) || rect.height || 220;
+  canvas.width = rect.width * dpr;
+  canvas.height = cssHeight * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, rect.width, cssHeight);
+  return { canvas, ctx, width: rect.width, height: cssHeight };
+}
+
+function graficaBarras() {
+  const col = variableY.value;
+  const grafica = prepararCanvas("graficaBarras");
+  if (!grafica || !col) return;
+  const { ctx, width, height } = grafica;
+  const entradas = Object.entries(conteo(col)).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const max = Math.max(...entradas.map(([, v]) => v), 1);
+  const barH = Math.max(16, (height - 30) / Math.max(entradas.length, 1) - 7);
+  document.getElementById("tituloGraficaBarras").textContent = `Distribución: ${col}`;
+  ctx.font = "12px Arial";
+  entradas.forEach(([label, valor], i) => {
+    const y = 18 + i * (barH + 7);
+    const w = (width - 150) * valor / max;
+    ctx.fillStyle = "rgba(56, 189, 248, 0.22)";
+    ctx.fillRect(130, y, w, barH);
+    ctx.fillStyle = "#38bdf8";
+    ctx.fillRect(130, y, 3, barH);
+    ctx.fillStyle = "#dbeafe";
+    ctx.fillText(String(label).slice(0, 18), 8, y + barH - 4);
+    ctx.fillStyle = "#f8fafc";
+    ctx.fillText(String(valor), 138 + w, y + barH - 4);
+  });
+}
+
+function graficaDispersion() {
+  const xCol = variableX.value;
+  const yCol = variableY.value;
+  const grafica = prepararCanvas("graficaDispersion");
+  if (!grafica || !xCol || !yCol) return;
+  const { ctx, width, height } = grafica;
+  const puntos = datos
+    .map((fila) => ({ x: Number(fila[xCol]), y: Number(fila[yCol]) }))
+    .filter((p) => !Number.isNaN(p.x) && !Number.isNaN(p.y));
+  if (!puntos.length) return;
+  document.getElementById("tituloGraficaDispersion").textContent = `${yCol} vs ${xCol}`;
+  const minX = Math.min(...puntos.map((p) => p.x));
+  const maxX = Math.max(...puntos.map((p) => p.x));
+  const minY = Math.min(...puntos.map((p) => p.y));
+  const maxY = Math.max(...puntos.map((p) => p.y));
+  const sx = (x) => 36 + ((x - minX) / (maxX - minX || 1)) * (width - 58);
+  const sy = (y) => height - 28 - ((y - minY) / (maxY - minY || 1)) * (height - 52);
+  ctx.strokeStyle = "rgba(148, 163, 184, 0.4)";
+  ctx.beginPath();
+  ctx.moveTo(32, 12);
+  ctx.lineTo(32, height - 24);
+  ctx.lineTo(width - 12, height - 24);
+  ctx.stroke();
+  ctx.fillStyle = "#38bdf8";
+  puntos.forEach((p) => {
+    ctx.beginPath();
+    ctx.arc(sx(p.x), sy(p.y), 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+function dibujarGraficasAutomaticas() {
+  if (!datos.length || !columnas.length) return;
+  if (!variableY.value) variableY.value = columnas[0];
+  graficaBarras();
+  graficaDispersion();
+}
+
+function exportar(tipo) {
+  const contenido = tipo === "json"
+    ? JSON.stringify(ultimoResultado, null, 2)
+    : [Object.keys(ultimoResultado[0] || {}).join(","), ...ultimoResultado.map((r) => Object.values(r).join(","))].join("\n");
+  const blob = new Blob([contenido], { type: "text/plain" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `estadistica.${tipo === "json" ? "json" : "csv"}`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+document.getElementById("btnCargar").addEventListener("click", cargarDatos);
+document.getElementById("btnPacientesMedico").addEventListener("click", cargarPacientesDelMedico);
+document.getElementById("btnEjemplo").addEventListener("click", () => {
+  entrada.value = `grupo,edad,phq9,gad7,respuesta,enfermedad
+control,35,6,5,0,0
+control,42,8,7,0,0
+control,31,4,3,0,0
+tratamiento,39,14,12,1,1
+tratamiento,47,18,15,1,1
+tratamiento,52,21,17,1,1`;
+  cargarDatos();
+});
+archivo.addEventListener("change", async () => {
+  const file = archivo.files[0];
+  if (!file) return;
+  entrada.value = await file.text();
+  cargarDatos();
+});
+document.querySelectorAll("[data-analisis]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const mapa = { descriptivos, frecuencias, cruzada: tablaCruzada, ttest, chi2, correlacion, regresion, diagnostica, normalidad, riesgo, graficaBarras, graficaDispersion };
+    mapa[btn.dataset.analisis]?.();
+  });
+});
+document.getElementById("btnExportarCSV").addEventListener("click", () => exportar("csv"));
+document.getElementById("btnExportarJSON").addEventListener("click", () => exportar("json"));
+
+cargarDatos();

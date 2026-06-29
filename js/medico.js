@@ -103,6 +103,7 @@ async function cargarPacientes(uidMedico) {
 
   mostrarPacientes(pacientesGlobal);
   calcularEstadisticas(pacientesGlobal);
+  renderizarGraficasMedico(pacientesGlobal);
 }
 
 function formatearDiagnostico(diagnostico) {
@@ -113,14 +114,17 @@ function formatearDiagnostico(diagnostico) {
   }
 
   if (typeof diagnostico === "object") {
-    const codigo = diagnostico.codigo ? `${diagnostico.codigo} - ` : "";
+    const catalogo = diagnostico.catalogo ? `${diagnostico.catalogo}: ` : "";
     const texto =
       diagnostico.texto ||
       diagnostico.nombre ||
       diagnostico.descripcion ||
       "";
+    const codigo = diagnostico.codigo && !texto.startsWith(diagnostico.codigo)
+      ? `${diagnostico.codigo} - `
+      : "";
 
-    return `${codigo}${texto}`.trim() || "Sin diagnóstico";
+    return `${catalogo}${codigo}${texto}`.trim() || "Sin diagnóstico";
   }
 
   return String(diagnostico);
@@ -144,9 +148,21 @@ function obtenerDiagnosticosPaciente(paciente) {
   const historial = Array.isArray(paciente.historialDiagnosticos)
     ? paciente.historialDiagnosticos
     : [];
+  const catalogoVisible = paciente.diagnosticoCatalogoVisible || "auto";
+  const historialVisible = catalogoVisible === "auto"
+    ? historial
+    : historial.filter((dx) => (dx.catalogo || "CIE-10") === catalogoVisible);
 
   const principal =
-    paciente.diagnostico ||
+    (
+      catalogoVisible !== "auto" &&
+      paciente.diagnostico &&
+      (paciente.diagnostico.catalogo || "CIE-10") === catalogoVisible
+        ? paciente.diagnostico
+        : null
+    ) ||
+    (catalogoVisible === "auto" ? paciente.diagnostico : null) ||
+    historialVisible[historialVisible.length - 1] ||
     historial[historial.length - 1] ||
     "";
 
@@ -168,6 +184,23 @@ function obtenerDiagnosticosPaciente(paciente) {
   };
 }
 
+function calcularEdad(fechaNacimiento) {
+  if (!fechaNacimiento) return "";
+
+  const nacimiento = new Date(`${fechaNacimiento}T00:00:00`);
+  if (Number.isNaN(nacimiento.getTime())) return "";
+
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - nacimiento.getFullYear();
+  const mes = hoy.getMonth() - nacimiento.getMonth();
+
+  if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+    edad -= 1;
+  }
+
+  return edad >= 0 ? edad : "";
+}
+
 function mostrarPacientes(pacientes) {
   const lista = document.getElementById("listaPacientes");
   lista.innerHTML = "";
@@ -183,7 +216,8 @@ function mostrarPacientes(pacientes) {
 
   pacientes.forEach((paciente) => {
     const nombre = paciente.nombre || "Paciente sin nombre";
-    const edad = paciente.edad ? `${paciente.edad} años` : "No registrada";
+    const edadValor = calcularEdad(paciente.fechaNacimiento) || paciente.edad;
+    const edad = edadValor ? `${edadValor} años` : "No registrada";
     const diagnosticos = obtenerDiagnosticosPaciente(paciente);
     const diagnosticoPrincipal = formatearDiagnostico(diagnosticos.principal);
     const diagnosticosSecundarios = diagnosticos.secundarios
@@ -249,14 +283,76 @@ function calcularEstadisticas(pacientes) {
   document.getElementById("expedientesHoy").textContent = 0;
 }
 
-document.addEventListener("click", (e) => {
-  const diagnosticoTexto = e.target.closest(".diagnostico-texto");
+function contarPor(pacientes, obtenerClave) {
+  return pacientes.reduce((conteo, paciente) => {
+    const clave = obtenerClave(paciente) || "Sin registro";
+    conteo[clave] = (conteo[clave] || 0) + 1;
+    return conteo;
+  }, {});
+}
 
-  if (!diagnosticoTexto) return;
+function diagnosticoCorto(paciente) {
+  const diagnosticos = obtenerDiagnosticosPaciente(paciente);
+  const dx = diagnosticos.principal;
+
+  if (!dx) return "Sin diagnóstico";
+  if (typeof dx === "string") return dx.slice(0, 28);
+
+  return (dx.codigo || dx.nombre || dx.texto || "Sin diagnóstico").slice(0, 28);
+}
+
+function dibujarBarras(canvasId, conteo) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const cssHeight = Number(canvas.getAttribute("height")) || rect.height || 180;
+  canvas.width = rect.width * dpr;
+  canvas.height = cssHeight * dpr;
+  ctx.scale(dpr, dpr);
+
+  const width = rect.width;
+  const height = cssHeight;
+  ctx.clearRect(0, 0, width, height);
+
+  const entradas = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const max = Math.max(...entradas.map(([, v]) => v), 1);
+  const barH = Math.max(18, (height - 28) / Math.max(entradas.length, 1) - 8);
+
+  ctx.font = "12px Arial";
+  entradas.forEach(([label, valor], i) => {
+    const y = 18 + i * (barH + 8);
+    const barW = (width - 150) * valor / max;
+    ctx.fillStyle = "rgba(56, 189, 248, 0.22)";
+    ctx.fillRect(130, y, barW, barH);
+    ctx.fillStyle = "#38bdf8";
+    ctx.fillRect(130, y, 3, barH);
+    ctx.fillStyle = "#dbeafe";
+    ctx.fillText(label, 8, y + barH - 4);
+    ctx.fillStyle = "#f8fafc";
+    ctx.fillText(String(valor), 138 + barW, y + barH - 4);
+  });
+}
+
+function renderizarGraficasMedico(pacientes) {
+  dibujarBarras("graficaEstados", contarPor(pacientes, (p) => p.estado || "Activo"));
+  dibujarBarras("graficaDiagnosticos", contarPor(pacientes, diagnosticoCorto));
+}
+
+document.addEventListener("click", (e) => {
+  const diagnosticoColumna = e.target.closest(".diagnostico-columna");
+
+  if (!diagnosticoColumna) return;
 
   // Evita que al hacer clic se abra el expediente del paciente
   e.preventDefault();
   e.stopPropagation();
+
+  const diagnosticoTexto = diagnosticoColumna.querySelector(".diagnostico-texto");
+
+  if (!diagnosticoTexto) return;
 
   diagnosticoTexto.classList.toggle("expandido");
 

@@ -7,24 +7,47 @@ body
     {
     margin:0;
     background:
-        radial-gradient(circle at top left,#1f2937,transparent 35%),
-        linear-gradient(135deg,#030303,#101010);
-    color:white;
+        radial-gradient(circle at top, rgba(78,163,255,0.22), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(0,212,255,0.13), transparent 28%),
+        linear-gradient(135deg, #050608, #080b10 50%, #0e1520);
+    color:#f8fafc;
     font-family:Arial, Helvetica, sans-serif;
     min-height:100vh;
 }
 
+.topbar{
+    position:fixed;
+    top:24px;
+    left:32px;
+    right:32px;
+    display:flex;
+    gap:10px;
+    z-index:1000;
+}
+
+.btn-secundario{
+    background:rgba(15, 18, 25, 0.88);
+    border:1px solid rgba(78,163,255,0.28);
+    color:#e5e7eb;
+    border-radius:999px;
+    padding:10px 14px;
+}
+
 .layout{
     display:grid;
-    grid-template-columns:280px 1fr;
+    grid-template-columns:260px minmax(0,1fr);
     min-height:100vh;
+    gap:24px;
+    padding:98px 32px 32px;
 }
 
 .sidebar{
-    background:rgba(255,255,255,0.04);
-    border-right:1px solid rgba(255,255,255,0.12);
-    padding:34px 26px;
-    backdrop-filter:blur(16px);
+    background:rgba(15, 18, 25, 0.88);
+    border:1px solid rgba(255,255,255,0.10);
+    border-radius:24px;
+    padding:24px 20px;
+    box-shadow:0 0 35px rgba(78,163,255,0.10), 0 18px 50px rgba(0,0,0,0.38);
+    backdrop-filter:blur(18px);
 }
 
 .sidebar h2{
@@ -37,30 +60,31 @@ body
     width:100%;
     display:block;
     margin-bottom:14px;
-    padding:15px 18px;
+    padding:12px 14px;
     border-radius:16px;
-    border:1px solid rgba(255,255,255,0.14);
-    background:rgba(255,255,255,0.06);
-    color:white;
+    border:1px solid rgba(255,255,255,0.10);
+    background:rgba(255,255,255,0.05);
+    color:#e5e7eb;
     text-align:left;
     cursor:pointer;
     transition:0.25s;
 }
 
 .menu button:hover{
-    background:white;
-    color:black;
-    transform:translateX(5px);
+    background:rgba(56,189,248,0.12);
+    border-color:rgba(78,163,255,0.35);
+    color:#e0f2fe;
 }
 
 .contenido{
-    padding:90px 6%;
+    min-width:0;
+    padding:0;
 }
 
 h1{
-    font-size:52px;
-    font-weight:300;
-    margin:0 0 8px;
+    font-size:30px;
+    font-weight:800;
+    margin:0 0 16px;
 }
 
 .subtitulo{
@@ -76,18 +100,18 @@ h1{
 }
 
 button{
-    padding:13px 22px;
+    padding:10px 14px;
     border:none;
-    border-radius:999px;
-    background:white;
-    color:black;
+    border-radius:14px;
+    background:linear-gradient(135deg, #2563eb, #00d4ff);
+    color:white;
     cursor:pointer;
     transition:0.25s;
+    font-weight:700;
 }
 
 button:hover{
-    transform:scale(1.03);
-    background:#d8d8d8;
+    box-shadow:0 0 28px rgba(0,212,255,0.28);
 }
 
 .boton-secundario{
@@ -102,19 +126,19 @@ button:hover{
 }
 
 .tarjeta{
-    background:rgba(255,255,255,0.07);
-    border:1px solid rgba(255,255,255,0.14);
-    border-radius:28px;
-    padding:34px;
+    background:rgba(15, 18, 25, 0.88);
+    border:1px solid rgba(255,255,255,0.10);
+    border-radius:24px;
+    padding:28px;
     margin-bottom:24px;
-    box-shadow:0 20px 60px rgba(0,0,0,0.35);
+    box-shadow:0 0 35px rgba(78,163,255,0.10), 0 18px 50px rgba(0,0,0,0.38);
     backdrop-filter:blur(18px);
 }
 
 .tarjeta h2{
     margin-top:0;
-    font-size:28px;
-    font-weight:300;
+    font-size:22px;
+    font-weight:800;
 }
 
 .grid{
@@ -123,8 +147,8 @@ button:hover{
 
 .dato,
 .dato-card{
-    padding:18px 0;
-    border-bottom:1px solid rgba(255,255,255,0.14);
+    padding:14px 0;
+    border-bottom:1px solid rgba(148,163,184,0.14);
     background:transparent;
     border-radius:0;
 }
@@ -136,29 +160,62 @@ button:hover{
 
 .dato label,
 .dato-card span{
-    color:#9ca3af;
+    color:#94a3b8;
     display:block;
     margin-bottom:8px;
     font-size:14px;
 }
 
+.oculto {
+    display: none !important;
+}
+
+.boton-editar-dato {
+    float: right;
+    margin: -3px 0 0 10px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: rgba(78,163,255,0.12);
+    border: 1px solid rgba(78,163,255,0.28);
+    color: #bfdbfe;
+    font-size: 11px;
+    box-shadow: none;
+}
+
+.boton-editar-dato:hover {
+    background: rgba(78,163,255,0.22);
+    box-shadow: 0 0 16px rgba(78,163,255,0.18);
+}
+
 .dato div,
 .dato-card strong{
-    font-size:19px;
+    font-size:16px;
     line-height:1.5;
     font-weight:400;
 }
 
 .dato label{
-    color:#9ca3af;
+    color:#94a3b8;
     display:block;
     margin-bottom:8px;
     font-size:14px;
 }
 
 .dato div{
-    font-size:19px;
+    font-size:16px;
     line-height:1.4;
+}
+
+input,
+select,
+textarea{
+    width:100%;
+    padding:10px 12px;
+    border-radius:14px;
+    border:1px solid rgba(148,163,184,0.25);
+    background:rgba(15,23,42,0.95);
+    color:white;
+    font-size:14px;
 }
 
 @media(max-width:800px){
@@ -184,7 +241,7 @@ button:hover{
   justify-content: space-between;
   gap: 14px;
   padding: 10px 0;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
   font-size: 15px;
 }
 

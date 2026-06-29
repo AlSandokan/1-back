@@ -11,6 +11,23 @@ import {
 
 let uidMedico = "";
 
+function calcularEdad(fechaNacimiento) {
+  if (!fechaNacimiento) return "";
+
+  const nacimiento = new Date(`${fechaNacimiento}T00:00:00`);
+  if (Number.isNaN(nacimiento.getTime())) return "";
+
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - nacimiento.getFullYear();
+  const mes = hoy.getMonth() - nacimiento.getMonth();
+
+  if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+    edad -= 1;
+  }
+
+  return edad >= 0 ? edad : "";
+}
+
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = "login.html";
@@ -28,9 +45,12 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 window.guardarPacienteNuevo = async function() {
+  const fechaNacimiento = document.getElementById("fechaNacimiento").value;
+
   const paciente = {
     nombre: document.getElementById("nombre").value,
-    fechaNacimiento: document.getElementById("fechaNacimiento").value,
+    fechaNacimiento,
+    edad: calcularEdad(fechaNacimiento),
     sexo: document.getElementById("sexo").value,
     curp: document.getElementById("curp").value,
     telefono: document.getElementById("telefono").value,

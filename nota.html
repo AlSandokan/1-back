@@ -45,11 +45,49 @@
 <input type="hidden" id="cie10Nombre">
 
 <h3>Diagnósticos seleccionados</h3>
+<div class="grid-diagnosticos">
+    <div>
+        <label for="buscadorCIE10">Diagnostico CIE-10</label>
+        <input
+            id="buscadorCIE10"
+            type="text"
+            placeholder="Buscar CIE-10. Ej. F33.2 o depresivo"
+            autocomplete="off"
+        >
+        <div id="resultadosCIE10Lista"></div>
+    </div>
+
+    <div>
+        <label for="buscadorCIE11">Diagnostico CIE-11</label>
+        <input
+            id="buscadorCIE11"
+            type="text"
+            placeholder="Buscar CIE-11. Ej. 6A70 o depresivo"
+            autocomplete="off"
+        >
+        <div id="resultadosCIE11Lista"></div>
+    </div>
+</div>
+
+<label for="diagnosticoCatalogoVisible">Mostrar en panel medico</label>
+<select id="diagnosticoCatalogoVisible">
+    <option value="auto">Automatico / diagnostico principal</option>
+    <option value="CIE-10">CIE-10</option>
+    <option value="CIE-11">CIE-11</option>
+</select>
+
 <div id="diagnosticosSeleccionados"></div>
 
 
 
 <label>Tratamiento visible para paciente</label>
+<input
+    id="buscadorMedicamento"
+    type="text"
+    placeholder="Buscar medicamento. Ej. sertralina, litio, quetiapina"
+    autocomplete="off"
+>
+<div id="resultadosMedicamentos"></div>
 <textarea id="tratamiento" placeholder="Medicamentos actuales"></textarea>
 
 <label>Médico tratante visible para paciente</label>

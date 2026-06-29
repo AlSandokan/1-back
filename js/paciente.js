@@ -16,6 +16,7 @@ import {
 } from "./services/usuarios.js";
 
 let uidPaciente = "";
+let datosPacienteActual = null;
 
 function formatearDiagnostico(diagnostico) {
   if (!diagnostico) return "Sin diagnostico";
@@ -50,6 +51,32 @@ function claveDiagnostico(diagnostico) {
   }
 
   return String(diagnostico);
+}
+
+function calcularEdad(fechaNacimiento) {
+  if (!fechaNacimiento) return "";
+
+  const nacimiento = new Date(`${fechaNacimiento}T00:00:00`);
+  if (Number.isNaN(nacimiento.getTime())) return "";
+
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - nacimiento.getFullYear();
+  const mes = hoy.getMonth() - nacimiento.getMonth();
+
+  if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+    edad -= 1;
+  }
+
+  return edad >= 0 ? edad : "";
+}
+
+function formatearFecha(fecha) {
+  if (!fecha) return "Sin registro";
+
+  const partes = fecha.split("-");
+  if (partes.length !== 3) return fecha;
+
+  return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
 function renderizarDiagnosticos(datos) {
@@ -118,6 +145,7 @@ onAuthStateChanged(auth, async (user) => {
 
 async function cargarDatosPaciente() {
   const datos = await obtenerUsuario(uidPaciente);
+  datosPacienteActual = datos;
 
   if (!datos) {
     document.getElementById("nombrePaciente").innerText =
@@ -130,6 +158,16 @@ async function cargarDatosPaciente() {
 
   document.getElementById("correoPaciente").innerText =
     datos.email || "Sin correo";
+
+  const edadCalculada = calcularEdad(datos.fechaNacimiento);
+
+  document.getElementById("fechaNacimientoPaciente").innerText =
+    formatearFecha(datos.fechaNacimiento);
+
+  document.getElementById("edadPaciente").innerText =
+    edadCalculada || datos.edad
+      ? `${edadCalculada || datos.edad} años`
+      : "No registrada";
 
   renderizarDiagnosticos(datos);
 
@@ -293,6 +331,18 @@ window.editarDatosPaciente = async function() {
   const nuevoTelefono = prompt("Teléfono:", datos.telefono || "");
   if (nuevoTelefono === null) return;
 
+  const nuevaFechaNacimiento = prompt(
+    "Fecha de nacimiento (AAAA-MM-DD):",
+    datos.fechaNacimiento || ""
+  );
+  if (nuevaFechaNacimiento === null) return;
+
+  const nuevaEdad = prompt(
+    "Edad manual (opcional, se usa si no hay fecha de nacimiento):",
+    datos.edad || ""
+  );
+  if (nuevaEdad === null) return;
+
   const nuevoDiagnostico = prompt("Diagnóstico:", datos.diagnostico || "");
   if (nuevoDiagnostico === null) return;
 
@@ -307,6 +357,8 @@ window.editarDatosPaciente = async function() {
 
   await actualizarUsuario(uidPaciente, {
     telefono: nuevoTelefono,
+    fechaNacimiento: nuevaFechaNacimiento,
+    edad: nuevaEdad,
     diagnostico: nuevoDiagnostico,
     tratamiento: nuevoTratamiento,
     medicoTratante: nuevoMedico,
@@ -316,6 +368,37 @@ window.editarDatosPaciente = async function() {
   await cargarDatosPaciente();
 
   alert("Datos actualizados");
+};
+
+window.editarCampoPaciente = async function(campo, etiqueta, tipo = "text") {
+  const datos = datosPacienteActual || await obtenerUsuario(uidPaciente);
+  const valorActual = datos?.[campo] || "";
+  const etiquetaCampo = etiqueta || campo;
+  let nuevoValor = null;
+
+  if (tipo === "textarea") {
+    nuevoValor = prompt(`${etiquetaCampo}:`, valorActual);
+  } else if (tipo === "date") {
+    nuevoValor = prompt(`${etiquetaCampo} (AAAA-MM-DD):`, valorActual);
+  } else if (tipo === "number") {
+    nuevoValor = prompt(`${etiquetaCampo}:`, valorActual);
+  } else {
+    nuevoValor = prompt(`${etiquetaCampo}:`, valorActual);
+  }
+
+  if (nuevoValor === null) return;
+
+  const actualizacion = {
+    [campo]: nuevoValor
+  };
+
+  if (campo === "fechaNacimiento") {
+    const edadCalculada = calcularEdad(nuevoValor);
+    actualizacion.edad = edadCalculada || datos?.edad || "";
+  }
+
+  await actualizarUsuario(uidPaciente, actualizacion);
+  await cargarDatosPaciente();
 };
 
 window.marcarDiagnosticoPrincipal = async function(index) {

@@ -44,16 +44,26 @@
       Suspender / solicitar eliminación
     </button>
 
-    <button onclick="editarDatosPaciente()">✏️ Editar datos generales</button>
+    <button class="oculto" onclick="editarDatosPaciente()">Editar datos generales</button>
 
     <section id="seccionResumen">
       <div class="tarjeta">
-        <h2>Datos generales</h2>
+        <h2>Datos generales <button class="boton-editar-dato" onclick="editarCampoPaciente('nombre', 'Nombre', 'text')">Editar nombre</button></h2>
 
         <div class="grid">
           <div class="dato">
-            <label>Correo</label>
+            <label>Correo <button class="boton-editar-dato" onclick="editarCampoPaciente('email', 'Correo', 'text')">Editar</button></label>
             <div id="correoPaciente">Cargando...</div>
+          </div>
+
+          <div class="dato">
+            <label>Fecha de nacimiento <button class="boton-editar-dato" onclick="editarCampoPaciente('fechaNacimiento', 'Fecha de nacimiento', 'date')">Editar</button></label>
+            <div id="fechaNacimientoPaciente">Sin registro</div>
+          </div>
+
+          <div class="dato">
+            <label>Edad manual <button class="boton-editar-dato" onclick="editarCampoPaciente('edad', 'Edad manual', 'number')">Editar</button></label>
+            <div id="edadPaciente">No registrada</div>
           </div>
 
           <div class="dato diagnosticos-lista">
@@ -62,27 +72,27 @@
           </div>
 
           <div class="dato">
-            <label>Tratamiento</label>
+            <label>Tratamiento <button class="boton-editar-dato" onclick="editarCampoPaciente('tratamiento', 'Tratamiento', 'textarea')">Editar</button></label>
             <div id="tratamiento">Cargando...</div>
           </div>
 
           <div class="dato">
-            <label>Médico tratante</label>
+            <label>Médico tratante <button class="boton-editar-dato" onclick="editarCampoPaciente('medicoTratante', 'Medico tratante', 'text')">Editar</button></label>
             <div id="medicoTratante">Cargando...</div>
           </div>
 
           <div class="dato">
-            <label>Última consulta</label>
+            <label>Última consulta <button class="boton-editar-dato" onclick="editarCampoPaciente('ultimaConsulta', 'Ultima consulta', 'date')">Editar</button></label>
             <div id="ultimaConsulta">Cargando...</div>
           </div>
 
           <div class="dato-card">
-            <span>Próxima consulta</span>
+            <span>Próxima consulta <button class="boton-editar-dato" onclick="editarCampoPaciente('proximaConsulta', 'Proxima consulta', 'date')">Editar</button></span>
             <strong id="proximaConsulta">Sin programar</strong>
           </div>
 
           <div class="dato">
-            <label>Teléfono</label>
+            <label>Teléfono <button class="boton-editar-dato" onclick="editarCampoPaciente('telefono', 'Telefono', 'text')">Editar</button></label>
             <div id="telefonoPaciente">Cargando...</div>
           </div>
         </div>

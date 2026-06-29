@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estadistica clinica | Cognicion</title>
+<link rel="stylesheet" href="css/estadistica.css">
+</head>
+<body class="bloqueado">
+<header class="header">
+  <div>
+    <h1>Estadistica clinica</h1>
+    <p>Analisis descriptivo, inferencial y utilidad diagnostica para investigacion medica.</p>
+  </div>
+  <nav>
+    <button onclick="window.location.href='dashboard.html'">Inicio</button>
+    <button onclick="window.location.href='medico.html'">Panel medico</button>
+  </nav>
+</header>
+
+<main class="layout">
+  <section class="card">
+    <h2>Datos</h2>
+    <p class="ayuda">Pega una tabla CSV/TSV con encabezados o carga un archivo. Ejemplo: grupo, edad, phq9, respuesta.</p>
+    <textarea id="entradaDatos" spellcheck="false">grupo,edad,phq9,respuesta
+control,35,6,0
+control,42,8,0
+tratamiento,39,14,1
+tratamiento,47,18,1</textarea>
+    <div class="acciones">
+      <input id="archivoDatos" type="file" accept=".csv,.tsv,.txt">
+      <button id="btnCargar">Cargar datos</button>
+      <button id="btnPacientesMedico">Cargar pacientes autorizados</button>
+      <button id="btnEjemplo">Ejemplo clinico</button>
+    </div>
+    <div id="resumenDatos" class="mini"></div>
+  </section>
+
+  <section class="card">
+    <h2>Analisis</h2>
+    <div class="grid-controles">
+      <label>Variable principal<select id="variableY"></select></label>
+      <label>Variable X / Grupo<select id="variableX"></select></label>
+      <label>Filtro rapido<input id="filtroTexto" placeholder="grupo=tratamiento"></label>
+      <label>Umbral diagnostico<input id="umbral" type="number" step="0.01" value="10"></label>
+    </div>
+    <div class="botonera">
+      <button data-analisis="descriptivos">Descriptivos</button>
+      <button data-analisis="frecuencias">Frecuencias</button>
+      <button data-analisis="cruzada">Tabla cruzada</button>
+      <button data-analisis="ttest">t de Student</button>
+      <button data-analisis="chi2">Chi cuadrada</button>
+      <button data-analisis="correlacion">Correlacion</button>
+      <button data-analisis="regresion">Regresion lineal</button>
+      <button data-analisis="diagnostica">Sensibilidad / especificidad</button>
+      <button data-analisis="normalidad">Normalidad</button>
+      <button data-analisis="riesgo">Riesgo relativo / OR</button>
+      <button data-analisis="graficaBarras">Gráfica de barras</button>
+      <button data-analisis="graficaDispersion">Dispersión</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Gráficas</h2>
+    <div class="grid-graficas">
+      <div>
+        <h3 id="tituloGraficaBarras">Distribución</h3>
+        <canvas id="graficaBarras" height="220"></canvas>
+      </div>
+      <div>
+        <h3 id="tituloGraficaDispersion">Relación entre variables</h3>
+        <canvas id="graficaDispersion" height="220"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <section class="card resultados-card">
+    <div class="resultados-header">
+      <h2>Resultados</h2>
+      <div>
+        <button id="btnExportarCSV">Exportar CSV</button>
+        <button id="btnExportarJSON">Exportar JSON</button>
+      </div>
+    </div>
+    <div id="resultados" class="resultados">Carga datos y selecciona un analisis.</div>
+  </section>
+
+  <section class="card">
+    <h2>Funciones incluidas</h2>
+    <div class="modulos">
+      <span>Media, mediana, DE, varianza, IC95</span>
+      <span>Percentiles, min, max, rango intercuartil</span>
+      <span>Frecuencias y porcentajes</span>
+      <span>Tablas cruzadas 2x2 y RxC</span>
+      <span>t de Student independiente</span>
+      <span>Chi cuadrada</span>
+      <span>Pearson r</span>
+      <span>Regresion lineal simple</span>
+      <span>Sensibilidad, especificidad, VPP, VPN</span>
+      <span>Riesgo relativo y odds ratio</span>
+      <span>Z de asimetria aproximado</span>
+      <span>Exportacion de resultados</span>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="js/estadistica.js"></script>
+</body>
+</html>

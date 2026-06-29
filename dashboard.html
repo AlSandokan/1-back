@@ -14,9 +14,10 @@ body{
     margin:0;
     font-family:Arial, Helvetica, sans-serif;
     background:
-        radial-gradient(circle at top left, #1f2937, transparent 35%),
-        linear-gradient(135deg, #030303, #111111);
-    color:white;
+        radial-gradient(circle at top, rgba(78,163,255,0.22), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(0,212,255,0.13), transparent 28%),
+        linear-gradient(135deg, #050608, #080b10 50%, #0e1520);
+    color:#f8fafc;
     min-height:100vh;
 }
 
@@ -25,7 +26,7 @@ header{
     display:flex;
     justify-content:space-between;
     align-items:center;
-    border-bottom:1px solid rgba(255,255,255,0.12);
+    border-bottom:1px solid rgba(255,255,255,0.08);
     backdrop-filter:blur(12px);
 }
 
@@ -35,9 +36,9 @@ header{
 }
 
 .titulo{
-    font-size:42px;
-    font-weight:600;
-    color:white;
+    font-size:30px;
+    font-weight:800;
+    color:#e5e7eb;
 }
 
 .autores{
@@ -83,10 +84,10 @@ header{
 .tarjeta{
     min-height:260px;
     padding:32px;
-    border-radius:26px;
-    background:rgba(255,255,255,0.07);
-    border:1px solid rgba(255,255,255,0.14);
-    box-shadow:0 20px 60px rgba(0,0,0,0.35);
+    border-radius:14px;
+    background:rgba(20, 24, 33, 0.92);
+    border:1px solid rgba(255,255,255,0.10);
+    box-shadow:0 18px 45px rgba(0,0,0,0.35);
     backdrop-filter:blur(18px);
     transition:0.35s ease;
     position:relative;
@@ -100,14 +101,14 @@ header{
     left:0;
     width:100%;
     height:3px;
-    background:linear-gradient(90deg, transparent, #d6d6d6, transparent);
+    background:linear-gradient(90deg, transparent, #38bdf8, transparent);
     opacity:0.6;
 }
 
 .tarjeta:hover{
     transform:translateY(-8px);
-    background:rgba(255,255,255,0.11);
-    border-color:rgba(255,255,255,0.32);
+    background:rgba(30,41,59,0.98);
+    border-color:rgba(56,189,248,0.45);
 }
 
 .icono{
@@ -130,29 +131,28 @@ header{
 button{
     margin-top:18px;
     padding:14px 24px;
-    border-radius:999px;
+    border-radius:9px;
     border:none;
-    background:white;
-    color:#050505;
+    background:linear-gradient(135deg, #2563eb, #00d4ff);
+    color:white;
     font-size:15px;
     cursor:pointer;
     transition:0.25s;
 }
 
 button:hover{
-    background:#d8d8d8;
-    transform:scale(1.03);
+    box-shadow:0 0 28px rgba(0,212,255,0.28);
 }
 
 .boton-secundario{
-    background:transparent;
-    color:white;
-    border:1px solid rgba(255,255,255,0.45);
+    background:rgba(15, 18, 25, 0.88);
+    color:#e5e7eb;
+    border:1px solid rgba(56,189,248,0.28);
 }
 
 .boton-secundario:hover{
-    background:white;
-    color:black;
+    background:rgba(56,189,248,0.12);
+    color:#e0f2fe;
 }
 
 .stats{
@@ -163,8 +163,8 @@ button:hover{
 }
 
 .stat{
-    background:rgba(255,255,255,0.08);
-    border:1px solid rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.10);
     padding:16px 20px;
     border-radius:18px;
     min-width:130px;
@@ -285,8 +285,19 @@ footer{
         <p>
             Visualiza evolución, errores de comisión, errores de omisión y tiempo de reacción.
         </p>
-        <button>
+        <button onclick="window.location.href='estadistica.html'">
             Ver progreso
+        </button>
+    </div>
+
+    <div class="tarjeta">
+        <div class="icono">📈</div>
+        <h3>Estadística clínica</h3>
+        <p>
+            Analiza pacientes autorizados, variables clínicas, diagnósticos, tablas, pruebas y gráficas.
+        </p>
+        <button onclick="window.location.href='estadistica.html'">
+            Abrir estadística
         </button>
     </div>
 
@@ -321,11 +332,11 @@ footer{
         <p>
             Aplicación y seguimiento de instrumentos clínicos como PHQ-9, GAD-7 e ISI.
         </p>
-        <button>
+        <button onclick="window.location.href='estadistica.html'">
             PHQ-9
         </button>
 
-        <button class="boton-secundario">
+        <button class="boton-secundario" onclick="window.location.href='estadistica.html'">
             GAD-7
         </button>
     </div>

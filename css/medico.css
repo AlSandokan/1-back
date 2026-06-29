@@ -1,8 +1,11 @@
 body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
-  background: #0f172a;
-  color: #e5e7eb;
+  background:
+    radial-gradient(circle at top, rgba(78,163,255,0.22), transparent 32%),
+    radial-gradient(circle at bottom right, rgba(0,212,255,0.13), transparent 28%),
+    linear-gradient(135deg, #050608, #080b10 50%, #0e1520);
+  color: #f8fafc;
   font-size: 14px;
   overflow-x: hidden;
 }
@@ -13,8 +16,9 @@ body {
 
 .header-medico {
   padding: 18px 32px;
-  background: #020617;
-  border-bottom: 1px solid #1e293b;
+  background: rgba(5, 6, 8, 0.72);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
 }
 
 .header-medico h1 {
@@ -45,11 +49,12 @@ body {
 }
 
 .card {
-  background: #111827;
-  border: 1px solid #1f2937;
-  border-radius: 14px;
+  background: rgba(15, 18, 25, 0.88);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 22px;
   padding: 16px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+  box-shadow: 0 0 35px rgba(78,163,255,0.10), 0 18px 50px rgba(0,0,0,0.38);
+  backdrop-filter: blur(18px);
 }
 
 .perfil-medico h2,
@@ -95,8 +100,8 @@ body {
 }
 
 .stat {
-  background: #020617;
-  border: 1px solid #1e293b;
+  background: rgba(8, 12, 20, 0.92);
+  border: 1px solid rgba(255,255,255,0.10);
   border-radius: 12px;
   padding: 14px 16px;
 }
@@ -123,9 +128,9 @@ body {
   min-width: 0;
   flex: 1;
   padding: 10px 12px;
-  border-radius: 9px;
-  border: 1px solid #334155;
-  background: #020617;
+  border-radius: 14px;
+  border: 1px solid rgba(148,163,184,0.25);
+  background: rgba(15,23,42,0.95);
   color: white;
   font-size: 12px;
 }
@@ -135,8 +140,8 @@ body {
   flex-shrink: 0;
   padding: 10px 14px;
   border: none;
-  border-radius: 9px;
-  background: #2563eb;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #2563eb, #00d4ff);
   color: white;
   cursor: pointer;
   font-weight: bold;
@@ -145,7 +150,7 @@ body {
 
 .barra-acciones button:hover,
 .boton:hover {
-  background: #1d4ed8;
+  box-shadow: 0 0 28px rgba(0,212,255,0.28);
 }
 
 .lista-pacientes {
@@ -204,6 +209,35 @@ body {
   gap: 20px;
 }
 
+.graficas-medico {
+  margin-top: 20px;
+}
+
+.grid-graficas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.grid-graficas > div {
+  min-width: 0;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.05);
+}
+
+.grid-graficas h3 {
+  margin: 0 0 12px;
+  color: #bfdbfe;
+  font-size: 14px;
+}
+
+.grid-graficas canvas {
+  width: 100%;
+  max-width: 100%;
+}
+
 .lista-simple {
   padding-left: 18px;
   color: #cbd5e1;
@@ -219,6 +253,10 @@ body {
 
   .estadisticas {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-graficas {
+    grid-template-columns: 1fr;
   }
 
   .contenedor {
@@ -262,9 +300,9 @@ body {
 
 .encabezado-pacientes {
   overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid rgba(255,255,255,0.10);
   border-radius: 10px;
-  background: #020617;
+  background: rgba(8, 12, 20, 0.92);
   color: #94a3b8;
   font-size: 10px;
   font-weight: 800;
@@ -282,8 +320,8 @@ body {
 .fila-paciente {
   overflow: hidden;
   border-radius: 10px;
-  background: rgba(15, 23, 42, 0.96);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(20, 24, 33, 0.78);
+  border: 1px solid rgba(255,255,255,0.10);
   color: #eaf4ff;
   text-decoration: none;
   transition: 0.2s ease;
@@ -302,8 +340,9 @@ body {
 }
 
 .fila-paciente:hover {
-  background: rgba(30, 41, 59, 0.98);
-  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(30, 41, 59, 0.92);
+  border-color: rgba(78,163,255,0.35);
+  box-shadow: 0 0 26px rgba(78,163,255,0.12);
 }
 
 .paciente-nombre {
@@ -335,6 +374,7 @@ body.bloqueado aside {
 .diagnostico-columna {
   width: 100%;
   max-width: none;
+  cursor: pointer;
 }
 
 .paciente-dato.diagnostico-columna {

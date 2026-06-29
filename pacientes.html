@@ -10,9 +10,10 @@
 body{
     margin:0;
     background:
-        radial-gradient(circle at top left,#1f2937,transparent 35%),
-        linear-gradient(135deg,#030303,#101010);
-    color:white;
+        radial-gradient(circle at top, rgba(78,163,255,0.22), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(0,212,255,0.13), transparent 28%),
+        linear-gradient(135deg, #050608, #080b10 50%, #0e1520);
+    color:#f8fafc;
     font-family:Arial, Helvetica, sans-serif;
     min-height:100vh;
 }
@@ -31,17 +32,17 @@ body{
 }
 
 h1{
-    font-size:46px;
-    font-weight:300;
+    font-size:30px;
+    font-weight:800;
     margin:0;
 }
 
 .buscador{
     width:320px;
     padding:13px 16px;
-    border-radius:999px;
-    border:1px solid rgba(255,255,255,0.18);
-    background:rgba(255,255,255,0.07);
+    border-radius:14px;
+    border:1px solid rgba(148,163,184,0.25);
+    background:rgba(15,23,42,0.95);
     color:white;
 }
 
@@ -52,8 +53,8 @@ h1{
 }
 
 .tarjeta{
-    background:rgba(255,255,255,0.07);
-    border:1px solid rgba(255,255,255,0.14);
+    background:rgba(20, 24, 33, 0.92);
+    border:1px solid rgba(255,255,255,0.10);
     border-radius:22px;
     padding:22px;
     min-height:185px;
@@ -63,7 +64,7 @@ h1{
 
 .tarjeta:hover{
     transform:translateY(-4px);
-    border-color:rgba(255,255,255,0.32);
+    border-color:rgba(56,189,248,0.45);
 }
 
 .nombre{
@@ -73,7 +74,7 @@ h1{
 }
 
 .info{
-    color:#b8b8b8;
+    color:#94a3b8;
     font-size:14px;
     margin-top:6px;
     line-height:1.35;
@@ -83,11 +84,15 @@ button{
     margin-top:16px;
     padding:11px 18px;
     border:none;
-    border-radius:999px;
-    background:white;
-    color:black;
+    border-radius:9px;
+    background:linear-gradient(135deg, #2563eb, #00d4ff);
+    color:white;
     cursor:pointer;
     font-size:14px;
+}
+
+button:hover{
+    box-shadow:0 0 28px rgba(0,212,255,0.28);
 }
 
 @media(max-width:700px){

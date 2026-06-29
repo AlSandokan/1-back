@@ -1,28 +1,63 @@
 body{
-    background:#080808;
-    color:white;
+    margin:0;
+    background:
+        radial-gradient(circle at top, rgba(78,163,255,0.22), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(0,212,255,0.13), transparent 28%),
+        linear-gradient(135deg, #050608, #080b10 50%, #0e1520);
+    color:#f8fafc;
     font-family:Arial, Helvetica, sans-serif;
-    padding:40px;
+    padding:88px 32px 32px;
 }
 
 .contenedor{
-    max-width:1000px;
+    max-width:1100px;
     margin:auto;
-    background:#161616;
-    border:1px solid #333;
-    border-radius:25px;
-    padding:40px;
+    background:rgba(15, 18, 25, 0.88);
+    border:1px solid rgba(255,255,255,0.10);
+    border-radius:24px;
+    padding:32px;
+    box-shadow:0 0 35px rgba(78,163,255,0.10), 0 18px 50px rgba(0,0,0,0.38);
+    backdrop-filter:blur(18px);
+}
+
+h1,
+h2,
+h3{
+    color:#e5e7eb;
+}
+
+label{
+    display:block;
+    margin:16px 0 7px;
+    color:#94a3b8;
+    font-size:13px;
+    font-weight:700;
+}
+
+label[for="buscadorDiagnostico"],
+#buscadorDiagnostico,
+#resultadosCIE10,
+#cie10Codigo,
+#cie10Nombre {
+    display: none !important;
+}
+
+.grid-diagnosticos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 10px;
 }
 
 input, textarea, select{
     width:100%;
-    margin-bottom:20px;
-    padding:15px;
-    border-radius:12px;
-    border:1px solid #444;
-    background:#0d0d0d;
+    margin-bottom:14px;
+    padding:11px 12px;
+    border-radius:14px;
+    border:1px solid rgba(148,163,184,0.25);
+    background:rgba(15,23,42,0.95);
     color:white;
-    font-size:16px;
+    font-size:14px;
 }
 
 textarea{
@@ -31,12 +66,17 @@ textarea{
 }
 
 button{
-    padding:14px 25px;
+    padding:10px 14px;
     border:none;
-    border-radius:30px;
-    background:white;
-    color:black;
+    border-radius:14px;
+    background:linear-gradient(135deg, #2563eb, #00d4ff);
+    color:white;
     cursor:pointer;
+    font-weight:700;
+}
+
+button:hover{
+    box-shadow:0 0 28px rgba(0,212,255,0.28);
 }
 
 .barra-superior {
@@ -49,7 +89,7 @@ button{
 }
 
 .boton-secundario {
-    background: rgba(15, 23, 42, 0.9);
+    background: rgba(15, 18, 25, 0.88);
     border: 1px solid rgba(56, 189, 248, 0.28);
     color: #eaf4ff;
     padding: 10px 16px;
@@ -153,25 +193,44 @@ button{
     }
 }
 
-.resultados-cie10 {
+#resultadosCIE10Lista,
+#resultadosCIE11Lista,
+#resultadosCIE10,
+.resultados-cie10,
+#resultadosMedicamentos {
   margin-top: 8px;
-  border-radius: 10px;
+  border-radius: 14px;
   overflow: hidden;
-  background: #ffffff;
-  border: 1px solid #ddd;
+  background: rgba(15,23,42,0.95);
+  border: 1px solid rgba(148,163,184,0.25);
 }
 
 .resultado-cie10 {
   padding: 10px 12px;
   cursor: pointer;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
   font-size: 14px;
+  color:#e5e7eb;
 }
 
 .resultado-cie10:hover {
-  background: #f1f5f9;
+  background: rgba(56, 189, 248, 0.12);
 }
 
 .resultado-cie10 strong {
-  color: #1e3a8a;
+  color: #38bdf8;
+}
+
+.diagnostico-catalogo-titulo {
+  margin: 16px 0 8px;
+  color: #bfdbfe;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 800px) {
+  .grid-diagnosticos {
+    grid-template-columns: 1fr;
+  }
 }

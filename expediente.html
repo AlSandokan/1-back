@@ -10,23 +10,28 @@
 
 <style>
 body{
-    background:#080808;
-    color:white;
-    font-family:Arial;
+    background:
+        radial-gradient(circle at top, rgba(78,163,255,0.22), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(0,212,255,0.13), transparent 28%),
+        linear-gradient(135deg, #050608, #080b10 50%, #0e1520);
+    color:#f8fafc;
+    font-family:Arial, Helvetica, sans-serif;
     padding:50px;
 }
 
 .tarjeta{
     max-width:900px;
     margin:auto;
-    background:#161616;
-    border-radius:25px;
-    padding:40px;
-    border:1px solid #2a2a2a;
+    background:rgba(15, 18, 25, 0.88);
+    border-radius:24px;
+    padding:32px;
+    border:1px solid rgba(255,255,255,0.10);
+    box-shadow:0 0 35px rgba(78,163,255,0.10), 0 18px 50px rgba(0,0,0,0.38);
+    backdrop-filter:blur(18px);
 }
 
 h1{
-    font-size:45px;
+    font-size:30px;
 }
 
 .dato{
@@ -34,13 +39,13 @@ h1{
 }
 
 label{
-    color:#999;
+    color:#94a3b8;
     display:block;
     margin-bottom:6px;
 }
 
 .valor{
-    font-size:22px;
+    font-size:16px;
     white-space:pre-line;
 }
 </style>
