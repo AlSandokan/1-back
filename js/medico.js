@@ -24,6 +24,7 @@ onAuthStateChanged(auth, async (user) => {
   const accesoPermitido = await cargarPerfilMedico(user);
 
   if (!accesoPermitido) return;
+  document.body.classList.remove("bloqueado");
 
   console.log("UID del médico:", user.uid);
 

@@ -265,3 +265,9 @@ body {
   color: #64748b;
   font-style: italic;
 }
+
+body.bloqueado .layout,
+body.bloqueado main,
+body.bloqueado aside {
+  display: none !important;
+}
