@@ -65,3 +65,27 @@ button {
   color: #93c5fd;
   text-align: center;
 }
+
+.checkbox-legal{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    margin:18px 0;
+    font-size:14px;
+    color:#94a3b8;
+    line-height:1.5;
+}
+
+.checkbox-legal input{
+    margin-top:3px;
+    transform:scale(1.15);
+}
+
+.checkbox-legal a{
+    color:#38bdf8;
+    text-decoration:none;
+}
+
+.checkbox-legal a:hover{
+    text-decoration:underline;
+}

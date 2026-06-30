@@ -11,6 +11,7 @@
 
 <div class="auth-container">
   <div class="auth-card">
+
     <h1>Crear cuenta</h1>
     <p>Registro de paciente en Cognición</p>
 
@@ -19,6 +20,15 @@
     <input id="correoMedico" type="email" placeholder="Correo del médico tratante">
     <input id="password" type="password" placeholder="Contraseña">
 
+    <label class="checkbox-legal">
+      <input type="checkbox" id="aceptaAviso">
+
+      He leído y acepto el
+      <a href="aviso-privacidad.html" target="_blank">
+        Aviso de Privacidad
+      </a>
+    </label>
+
     <button id="btnCrearCuenta">Crear cuenta</button>
 
     <button class="btn-secundario" onclick="window.location.href='login.html'">
@@ -26,6 +36,7 @@
     </button>
 
     <p id="mensaje"></p>
+
   </div>
 </div>
 
