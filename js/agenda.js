@@ -1,5 +1,7 @@
 import { auth, db } from "./firebase.js";
 import { medicoPuedeVer, obtenerUsuario } from "./services/usuarios.js";
+import { registrarEventoAuditoria } from "./services/auditoria.js";
+import { iniciarMonitoreoSesion } from "./services/sesion.js";
 
 import {
   onAuthStateChanged
@@ -24,6 +26,8 @@ const pacienteCita = document.getElementById("pacienteCita");
 const listaCitas = document.getElementById("listaCitas");
 const calendario = document.getElementById("calendario");
 const tituloMes = document.getElementById("tituloMes");
+
+iniciarMonitoreoSesion("Agenda");
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -79,7 +83,7 @@ formCita.addEventListener("submit", async (e) => {
   if (!medicoUid || !pacienteCita.value) return;
 
   const paciente = pacientes.find((p) => p.id === pacienteCita.value);
-  await addDoc(collection(db, "usuarios", medicoUid, "agenda"), {
+  const datosCita = {
     pacienteId: pacienteCita.value,
     pacienteNombre: paciente?.nombre || "",
     fecha: document.getElementById("fechaCita").value,
@@ -91,6 +95,13 @@ formCita.addEventListener("submit", async (e) => {
     estado: "programada",
     creadoPor: medicoUid,
     fechaCreacion: new Date().toISOString()
+  };
+
+  await addDoc(collection(db, "usuarios", medicoUid, "agenda"), datosCita);
+  await registrarEventoAgenda("crear_cita", "El medico creo una cita en agenda.", {
+    pacienteUid: pacienteCita.value,
+    pacienteNombre: paciente?.nombre || "",
+    detalles: datosCita
   });
 
   formCita.reset();
@@ -124,14 +135,20 @@ function renderizarCitas() {
         estado: "atendida",
         fechaAtencion: new Date().toISOString()
       });
+      await registrarEventoAgenda("marcar_cita_atendida", "El medico marco una cita como atendida.", {
+        detalles: { citaId: btn.dataset.completar }
+      });
       await cargarCitas();
     });
   });
 
   listaCitas.querySelectorAll("[data-eliminar]").forEach((btn) => {
     btn.addEventListener("click", async () => {
-      if (!confirm("¿Eliminar esta cita?")) return;
+      if (!confirm("Eliminar esta cita?")) return;
       await deleteDoc(doc(db, "usuarios", medicoUid, "agenda", btn.dataset.eliminar));
+      await registrarEventoAgenda("eliminar_cita", "El medico elimino una cita de agenda.", {
+        detalles: { citaId: btn.dataset.eliminar }
+      });
       await cargarCitas();
     });
   });
@@ -177,6 +194,22 @@ document.getElementById("mesActual").addEventListener("click", () => {
   fechaCalendario = new Date();
   renderizarCalendario();
 });
+
+async function registrarEventoAgenda(accion, descripcion, opciones = {}) {
+  const medico = await obtenerUsuario(medicoUid);
+  await registrarEventoAuditoria({
+    accion,
+    modulo: "Agenda",
+    descripcion,
+    usuarioUid: medicoUid,
+    usuarioNombre: medico?.nombre || "",
+    usuarioRol: medico?.rol || "medico",
+    pacienteUid: opciones.pacienteUid || "",
+    pacienteNombre: opciones.pacienteNombre || "",
+    exito: true,
+    detalles: opciones.detalles || {}
+  });
+}
 
 function escaparHTML(valor) {
   return String(valor)

@@ -1,4 +1,6 @@
 import { auth, db } from "./firebase.js";
+import { registrarEventoAuditoria } from "./services/auditoria.js";
+import { iniciarMonitoreoSesion } from "./services/sesion.js";
 
 import {
   onAuthStateChanged
@@ -46,6 +48,8 @@ let uidPaciente = "";
 let datosPacienteActual = null;
 let tratamientosCache = [];
 let estudiosCache = [];
+
+iniciarMonitoreoSesion("Expediente paciente");
 
 function formatearDiagnostico(diagnostico) {
   if (!diagnostico) return "Sin diagnostico";
@@ -628,6 +632,18 @@ async function guardarTratamientoPaciente() {
     await crearTratamiento(uidPaciente, datos);
   }
 
+  await registrarAccionExpediente({
+    accion: tratamientoId ? "editar_tratamiento" : "crear_tratamiento",
+    descripcion: tratamientoId
+      ? "El medico edito un tratamiento del expediente."
+      : "El medico creo un tratamiento en el expediente.",
+    detalles: {
+      tratamientoId,
+      medicamento: datos.medicamento,
+      estado: datos.estado
+    }
+  });
+
   limpiarFormularioTratamiento();
   await cargarTratamientosPaciente();
   await sincronizarResumenTratamiento();
@@ -712,7 +728,16 @@ function editarTratamientoPaciente(id) {
 
 async function eliminarTratamientoPaciente(id) {
   if (!confirm("Eliminar este tratamiento del expediente?")) return;
+  const tratamiento = tratamientosCache.find((item) => item.id === id);
   await eliminarTratamiento(uidPaciente, id);
+  await registrarAccionExpediente({
+    accion: "eliminar_tratamiento",
+    descripcion: "El medico elimino un tratamiento del expediente.",
+    detalles: {
+      tratamientoId: id,
+      medicamento: tratamiento?.medicamento || ""
+    }
+  });
   await cargarTratamientosPaciente();
   await sincronizarResumenTratamiento();
 }
@@ -768,6 +793,18 @@ async function guardarEstudioPaciente() {
   } else {
     await crearEstudio(uidPaciente, datos);
   }
+
+  await registrarAccionExpediente({
+    accion: estudioId ? "editar_estudio" : "crear_estudio",
+    descripcion: estudioId
+      ? "El medico edito un estudio del expediente."
+      : "El medico registro un estudio en el expediente.",
+    detalles: {
+      estudioId,
+      nombre: datos.nombre,
+      tipo: datos.tipo
+    }
+  });
 
   limpiarFormularioEstudio();
   await cargarEstudiosPaciente();
@@ -836,7 +873,16 @@ function editarEstudioPaciente(id) {
 
 async function eliminarEstudioPaciente(id) {
   if (!confirm("Eliminar este estudio del expediente?")) return;
+  const estudio = estudiosCache.find((item) => item.id === id);
   await eliminarEstudio(uidPaciente, id);
+  await registrarAccionExpediente({
+    accion: "eliminar_estudio",
+    descripcion: "El medico elimino un estudio del expediente.",
+    detalles: {
+      estudioId: id,
+      nombre: estudio?.nombre || ""
+    }
+  });
   await cargarEstudiosPaciente();
 }
 
@@ -853,6 +899,14 @@ async function guardarNotaRapidaPaciente() {
     medicoUid: auth.currentUser.uid,
     medicoNombre: medico?.nombre || medico?.email || "Medico",
     pacienteId: uidPaciente
+  });
+
+  await registrarAccionExpediente({
+    accion: "crear_nota_rapida",
+    descripcion: "El medico creo una nota rapida en el expediente.",
+    detalles: {
+      longitudTexto: texto.length
+    }
   });
 
   ponerValor("notaRapidaTexto", "");
@@ -894,3 +948,24 @@ document.getElementById("limpiarTratamiento")?.addEventListener("click", limpiar
 document.getElementById("guardarEstudio")?.addEventListener("click", guardarEstudioPaciente);
 document.getElementById("limpiarEstudio")?.addEventListener("click", limpiarFormularioEstudio);
 document.getElementById("guardarNotaRapida")?.addEventListener("click", guardarNotaRapidaPaciente);
+
+async function registrarAccionExpediente({ accion, descripcion, detalles = {} }) {
+  const usuario = auth.currentUser;
+  if (!usuario) return;
+
+  const medico = await obtenerUsuario(usuario.uid);
+  const paciente = datosPacienteActual || await obtenerUsuario(uidPaciente);
+
+  await registrarEventoAuditoria({
+    accion,
+    modulo: "Expediente paciente",
+    descripcion,
+    usuarioUid: usuario.uid,
+    usuarioNombre: medico?.nombre || usuario.email || "",
+    usuarioRol: medico?.rol || "",
+    pacienteUid: uidPaciente,
+    pacienteNombre: paciente?.nombre || "",
+    exito: true,
+    detalles
+  });
+}

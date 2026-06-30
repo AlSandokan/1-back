@@ -5,9 +5,12 @@ body {
   min-height: 100vh;
   font-family: Arial, Helvetica, sans-serif;
   background:
+    linear-gradient(rgba(148,163,184,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,0.035) 1px, transparent 1px),
     radial-gradient(circle at top, rgba(78,163,255,0.22), transparent 32%),
     radial-gradient(circle at bottom right, rgba(0,212,255,0.13), transparent 28%),
     linear-gradient(135deg, #050608, #080b10 50%, #0e1520);
+  background-size: 42px 42px, 42px 42px, auto, auto, auto;
   color: #f8fafc;
 }
 
@@ -36,6 +39,7 @@ body.bloqueado main { display: none; }
   object-fit: contain;
   border-radius: 16px;
   border: 1px solid rgba(125,211,252,0.28);
+  box-shadow: 0 0 26px rgba(56,189,248,0.18);
 }
 
 .header h1,
@@ -58,12 +62,26 @@ body.bloqueado main { display: none; }
 }
 
 .card {
+  position: relative;
+  overflow: hidden;
   background: rgba(15, 18, 25, 0.88);
   border: 1px solid rgba(255,255,255,0.10);
   border-radius: 22px;
   padding: 20px;
   box-shadow: 0 0 35px rgba(78,163,255,0.10), 0 18px 50px rgba(0,0,0,0.38);
   backdrop-filter: blur(18px);
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(125,211,252,0.12), transparent 34%),
+    radial-gradient(circle at top right, rgba(0,212,255,0.10), transparent 36%);
+  opacity: 0;
+  transition: opacity .28s ease;
 }
 
 input {
@@ -73,6 +91,14 @@ input {
   background: rgba(2,6,23,.78);
   color: white;
   padding: 14px 16px;
+  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+
+input:focus {
+  outline: none;
+  border-color: rgba(56,189,248,.65);
+  background: rgba(2,6,23,.92);
+  box-shadow: 0 0 0 4px rgba(56,189,248,.10), 0 0 28px rgba(56,189,248,.16);
 }
 
 button {
@@ -83,6 +109,12 @@ button {
   padding: 10px 14px;
   cursor: pointer;
   font-weight: 800;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 28px rgba(0,212,255,0.26);
 }
 
 .tabs {
@@ -94,10 +126,13 @@ button {
 .tabs button {
   background: rgba(15,23,42,.88);
   border: 1px solid rgba(148,163,184,.24);
+  color: #cbd5e1;
 }
 
 .tabs button.activo {
   background: linear-gradient(135deg, #2563eb, #00d4ff);
+  color: white;
+  border-color: rgba(125,211,252,.50);
 }
 
 .grid {
@@ -122,6 +157,120 @@ button {
   color: #7dd3fc;
   font-size: 12px;
   font-weight: 800;
+}
+
+.diagnosticos-grid {
+  perspective: 1200px;
+}
+
+.diagnosticos-grid .card {
+  animation: diagnosticoEntrada .42s ease both;
+  min-height: 220px;
+  border-color: rgba(56,189,248,0.18);
+  background:
+    linear-gradient(145deg, rgba(15,23,42,0.94), rgba(8,12,20,0.88)),
+    rgba(15, 18, 25, 0.88);
+}
+
+.diagnosticos-grid .card:nth-child(3n + 1) { animation-delay: .02s; }
+.diagnosticos-grid .card:nth-child(3n + 2) { animation-delay: .06s; }
+.diagnosticos-grid .card:nth-child(3n + 3) { animation-delay: .10s; }
+
+.diagnosticos-grid .card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(56,189,248,0.42);
+  box-shadow:
+    0 0 42px rgba(56,189,248,0.16),
+    0 22px 60px rgba(0,0,0,0.44);
+}
+
+.diagnosticos-grid .card:hover::before {
+  opacity: 1;
+}
+
+.diagnosticos-grid .card h3 {
+  position: relative;
+  z-index: 1;
+  color: #f8fafc;
+  line-height: 1.18;
+  margin-bottom: 10px;
+}
+
+.diagnosticos-grid .card h3::after {
+  content: "";
+  display: block;
+  width: 42px;
+  height: 3px;
+  margin-top: 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #38bdf8, #22d3ee, transparent);
+}
+
+.diagnosticos-grid .tag {
+  position: relative;
+  z-index: 1;
+  margin: 8px 0 12px;
+  background: rgba(14,165,233,0.10);
+  border-color: rgba(56,189,248,0.34);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.diagnosticos-grid .tag::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: #22d3ee;
+  box-shadow: 0 0 14px rgba(34,211,238,0.75);
+}
+
+.diagnosticos-grid p,
+.diagnosticos-grid li {
+  position: relative;
+  z-index: 1;
+}
+
+.diagnosticos-grid ul {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.diagnosticos-grid li {
+  padding: 9px 10px 9px 28px;
+  border-radius: 12px;
+  background: rgba(2,6,23,0.42);
+  border: 1px solid rgba(148,163,184,0.10);
+}
+
+.diagnosticos-grid li::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: 15px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 12px rgba(56,189,248,0.75);
+}
+
+.diagnosticos-grid p strong {
+  color: #e0f2fe;
+}
+
+@keyframes diagnosticoEntrada {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 ul {

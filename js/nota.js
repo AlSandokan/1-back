@@ -1,4 +1,6 @@
 import { auth } from "./firebase.js";
+import { registrarEventoAuditoria } from "./services/auditoria.js";
+import { iniciarMonitoreoSesion } from "./services/sesion.js";
 import { CIE10 } from "./data/cie10.js";
 import { CIE11 } from "./data/cie11.js";
 import { MEDICAMENTOS } from "./data/medicamentos.js";
@@ -23,6 +25,8 @@ let uidPacienteActual = null;
 let diagnosticosSeleccionados = [];
 let notaEditandoId = null;
 let notasHistorial = {};
+
+iniciarMonitoreoSesion("Nota medica");
 
 const buscadorDiagnostico = document.getElementById("buscadorDiagnostico");
 const resultadosCIE10 = document.getElementById("resultadosCIE10");
@@ -471,6 +475,29 @@ window.guardarNotaMedica = async function() {
     } else {
       await guardarNota(uidPaciente, notaPayload);
     }
+
+    const usuario = auth.currentUser;
+    const medicoActual = usuario ? await obtenerUsuario(usuario.uid) : null;
+    const pacienteActual = await obtenerUsuario(uidPaciente);
+
+    await registrarEventoAuditoria({
+      accion: notaEditandoId ? "editar_nota_medica" : "crear_nota_medica",
+      modulo: "Nota medica",
+      descripcion: notaEditandoId
+        ? "El medico edito una nota medica sin borrar la original."
+        : "El medico creo una nota medica.",
+      usuarioUid: usuario?.uid || "",
+      usuarioNombre: medicoActual?.nombre || usuario?.email || medico || "",
+      usuarioRol: medicoActual?.rol || "",
+      pacienteUid: uidPaciente,
+      pacienteNombre: pacienteActual?.nombre || "",
+      exito: true,
+      detalles: {
+        notaId: notaEditandoId || "",
+        tipoNota: datosNotaClinica.tipoNota || "",
+        diagnosticos: diagnosticosSeleccionados.map((dx) => dx.codigo || dx.nombre || dx.texto || "")
+      }
+    });
 
     alert(notaEditandoId ? "Edicion guardada sin borrar la nota original" : "Nota medica guardada correctamente");
     limpiarFormularioNota();

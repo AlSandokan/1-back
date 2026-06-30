@@ -8,8 +8,12 @@ import {
   obtenerUsuario,
   crearPacienteProvisional
 } from "./services/usuarios.js";
+import { registrarEventoAuditoria } from "./services/auditoria.js";
+import { iniciarMonitoreoSesion } from "./services/sesion.js";
 
 let uidMedico = "";
+
+iniciarMonitoreoSesion("Nuevo paciente");
 
 function calcularEdad(fechaNacimiento) {
   if (!fechaNacimiento) return "";
@@ -75,7 +79,24 @@ window.guardarPacienteNuevo = async function() {
   }
 
   try {
-    await crearPacienteProvisional(paciente);
+    const refPaciente = await crearPacienteProvisional(paciente);
+    const medico = await obtenerUsuario(uidMedico);
+
+    await registrarEventoAuditoria({
+      accion: "crear_paciente_provisional",
+      modulo: "Nuevo paciente",
+      descripcion: "El medico creo un paciente provisional.",
+      usuarioUid: uidMedico,
+      usuarioNombre: medico?.nombre || "",
+      usuarioRol: medico?.rol || "medico",
+      pacienteUid: refPaciente.id,
+      pacienteNombre: paciente.nombre || "",
+      exito: true,
+      detalles: {
+        email: paciente.email || "",
+        tieneFechaNacimiento: Boolean(paciente.fechaNacimiento)
+      }
+    });
 
     alert("Paciente creado correctamente");
     window.location.href = "medico.html";

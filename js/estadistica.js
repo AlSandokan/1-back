@@ -2,6 +2,9 @@ import { auth, db } from "./firebase.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { medicoPuedeVer, obtenerUsuario } from "./services/usuarios.js";
+import { iniciarMonitoreoSesion } from "./services/sesion.js";
+
+iniciarMonitoreoSesion("Estadistica");
 
 let datos = [];
 let columnas = [];

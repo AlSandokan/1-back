@@ -1,4 +1,5 @@
 import { medicoPuedeVer } from "./services/usuarios.js";
+import { iniciarMonitoreoSesion } from "./services/sesion.js";
 
 import { auth, db } from "./firebase.js";
 
@@ -14,6 +15,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const ADMIN_UID = "NQ0CU5PSDBUgVrk56sjPEVhOs2D3";
+
+iniciarMonitoreoSesion("Panel medico");
 
 let pacientesGlobal = [];
 

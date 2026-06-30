@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Administración | Cognición</title>
+  <title>Administracion | Cognicion</title>
   <link rel="stylesheet" href="css/theme.css">
   <link rel="stylesheet" href="css/admin.css">
 </head>
@@ -11,12 +11,12 @@
 
 <header class="admin-header">
   <div>
-    <h1>Panel de Administración</h1>
-    <p>Supervisión general de Cognición</p>
+    <h1>Panel de Administracion</h1>
+    <p>Supervision general de Cognicion</p>
   </div>
 
   <button onclick="window.location.href='medico.html'">
-    Volver al panel médico
+    Volver al panel medico
   </button>
 </header>
 
@@ -25,27 +25,56 @@
   <section class="grid-resumen">
     <div class="card">
       <h3>Usuarios</h3>
-      <p id="totalUsuarios">—</p>
+      <p id="totalUsuarios">-</p>
     </div>
 
     <div class="card">
       <h3>Pacientes</h3>
-      <p id="totalPacientes">—</p>
+      <p id="totalPacientes">-</p>
     </div>
 
     <div class="card">
-      <h3>Médicos</h3>
-      <p id="totalMedicos">—</p>
+      <h3>Medicos</h3>
+      <p id="totalMedicos">-</p>
     </div>
 
     <div class="card">
-      <h3>Eventos de auditoría</h3>
-      <p id="totalAuditoria">—</p>
+      <h3>Eventos de auditoria</h3>
+      <p id="totalAuditoria">-</p>
+    </div>
+
+    <div class="card">
+      <h3>Sesiones inactivas</h3>
+      <p id="totalInactividad">-</p>
     </div>
   </section>
 
   <section class="card tabla-card">
-    <h2>Bitácora de auditoría</h2>
+    <div class="tabla-header">
+      <div>
+        <h2>Bitacora de auditoria</h2>
+        <p>Actividad de medicos y pacientes: sesiones, modulos, notas, agenda, expediente y cambios clinicos relevantes.</p>
+      </div>
+      <button id="btnActualizarAuditoria">Actualizar</button>
+    </div>
+
+    <div class="filtros-auditoria">
+      <input id="filtroAuditoria" placeholder="Buscar usuario, paciente, accion o descripcion">
+      <select id="filtroRol">
+        <option value="">Todos los roles</option>
+        <option value="medico">Medicos</option>
+        <option value="paciente">Pacientes</option>
+        <option value="admin">Admin</option>
+      </select>
+      <select id="filtroModulo">
+        <option value="">Todos los modulos</option>
+      </select>
+      <select id="filtroResultado">
+        <option value="">Todos los resultados</option>
+        <option value="true">Correctos</option>
+        <option value="false">Errores</option>
+      </select>
+    </div>
 
     <table>
       <thead>
@@ -53,15 +82,16 @@
           <th>Fecha</th>
           <th>Usuario</th>
           <th>Rol</th>
-          <th>Módulo</th>
-          <th>Acción</th>
+          <th>Modulo</th>
+          <th>Accion</th>
           <th>Paciente</th>
           <th>Resultado</th>
+          <th>Detalle</th>
         </tr>
       </thead>
       <tbody id="tablaAuditoria">
         <tr>
-          <td colspan="7">Cargando auditoría...</td>
+          <td colspan="8">Cargando auditoria...</td>
         </tr>
       </tbody>
     </table>

@@ -1,11 +1,15 @@
 import { auth } from "./firebase.js";
 import { actualizarUsuario, obtenerUsuario } from "./services/usuarios.js";
+import { registrarEventoAuditoria } from "./services/auditoria.js";
+import { iniciarMonitoreoSesion } from "./services/sesion.js";
 
 import {
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 let medicoUid = null;
+
+iniciarMonitoreoSesion("Perfil profesional");
 
 const campos = {
   nombre: document.getElementById("nombrePerfil"),
@@ -53,6 +57,22 @@ document.getElementById("formPerfil").addEventListener("submit", async (e) => {
     contactoCorreo: campos.correo.value.trim(),
     descripcionProfesional: campos.descripcion.value.trim(),
     perfilProfesionalActualizado: new Date().toISOString()
+  });
+
+  const medico = await obtenerUsuario(medicoUid);
+  await registrarEventoAuditoria({
+    accion: "editar_perfil_profesional",
+    modulo: "Perfil profesional",
+    descripcion: "El medico actualizo su perfil profesional.",
+    usuarioUid: medicoUid,
+    usuarioNombre: medico?.nombre || "",
+    usuarioRol: medico?.rol || "medico",
+    exito: true,
+    detalles: {
+      especialidad: campos.especialidad.value.trim(),
+      institucion: campos.institucion.value.trim(),
+      tieneFoto: Boolean(campos.foto.value.trim())
+    }
   });
 
   alert("Perfil profesional guardado.");

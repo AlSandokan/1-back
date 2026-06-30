@@ -1,6 +1,8 @@
 import { auth, db } from "./firebase.js";
 import { ESCALAS_PSIQUIATRICAS, interpretarEscala } from "./data/escalasPsiquiatricas.js";
-import { medicoPuedeVer } from "./services/usuarios.js";
+import { medicoPuedeVer, obtenerUsuario } from "./services/usuarios.js";
+import { registrarEventoAuditoria } from "./services/auditoria.js";
+import { iniciarMonitoreoSesion } from "./services/sesion.js";
 
 import {
   onAuthStateChanged
@@ -21,6 +23,8 @@ import {
 let usuarioActual = null;
 let uidSeguimiento = null;
 let modoVistaPrevia = false;
+
+iniciarMonitoreoSesion("Mi Salud");
 
 onAuthStateChanged(auth, async (user) => {
   try {
@@ -187,6 +191,27 @@ async function guardarResultadoEscala() {
     respuestas,
     creadoEn: serverTimestamp(),
     fechaISO: new Date().toISOString()
+  });
+
+  const datosUsuario = await obtenerUsuario(usuarioActual.uid);
+  const datosPaciente = await obtenerUsuario(uidSeguimiento);
+
+  await registrarEventoAuditoria({
+    accion: "guardar_resultado_escala",
+    modulo: "Mi Salud",
+    descripcion: "El usuario guardo un resultado de escala clinica.",
+    usuarioUid: usuarioActual.uid,
+    usuarioNombre: datosUsuario?.nombre || usuarioActual.email || "",
+    usuarioRol: datosUsuario?.rol || "",
+    pacienteUid: uidSeguimiento,
+    pacienteNombre: datosPaciente?.nombre || "",
+    exito: true,
+    detalles: {
+      escalaId: escala.id,
+      escalaNombre: escala.nombre,
+      puntaje,
+      interpretacion
+    }
   });
 
   alert(`Resultado guardado: ${escala.nombre} = ${puntaje} (${interpretacion})`);
@@ -369,6 +394,28 @@ async function guardarRegistroDiario() {
       energia: energia ? Number(energia) : null,
       comentario,
       creadoEn: serverTimestamp()
+    });
+
+    const datosUsuario = await obtenerUsuario(usuarioActual.uid);
+    const datosPaciente = await obtenerUsuario(uidSeguimiento);
+
+    await registrarEventoAuditoria({
+      accion: "guardar_registro_diario",
+      modulo: "Mi Salud",
+      descripcion: "El usuario guardo un registro diario de seguimiento.",
+      usuarioUid: usuarioActual.uid,
+      usuarioNombre: datosUsuario?.nombre || usuarioActual.email || "",
+      usuarioRol: datosUsuario?.rol || "",
+      pacienteUid: uidSeguimiento,
+      pacienteNombre: datosPaciente?.nombre || "",
+      exito: true,
+      detalles: {
+        animo,
+        ansiedad: ansiedad ? Number(ansiedad) : null,
+        sueno: sueno ? Number(sueno) : null,
+        energia: energia ? Number(energia) : null,
+        tieneComentario: Boolean(comentario)
+      }
     });
 
     alert("Registro guardado correctamente.");

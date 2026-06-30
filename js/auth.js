@@ -12,6 +12,9 @@ import {
   setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+import { obtenerUsuario } from "./services/usuarios.js";
+import { registrarEventoAuditoria, resumenError } from "./services/auditoria.js";
+
 window.registrarUsuario = async function() {
   const nombre = document.getElementById("nombre").value;
   const email = document.getElementById("email").value;
@@ -40,15 +43,61 @@ window.iniciarSesion = async function() {
   const password = document.getElementById("password").value;
 
   try {
-    await signInWithEmailAndPassword(auth, email, password);
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    const datos = await obtenerUsuario(cred.user.uid);
+
+    await registrarEventoAuditoria({
+      accion: "inicio_sesion",
+      modulo: "Autenticacion",
+      descripcion: "El usuario inicio sesion correctamente.",
+      usuarioUid: cred.user.uid,
+      usuarioNombre: datos?.nombre || cred.user.email || email,
+      usuarioRol: datos?.rol || "",
+      exito: true,
+      detalles: { email }
+    });
+
     window.location.href = "dashboard.html";
 
   } catch(error) {
+    try {
+      await registrarEventoAuditoria({
+        accion: "inicio_sesion_fallido",
+        modulo: "Autenticacion",
+        descripcion: "Intento fallido de inicio de sesion.",
+        usuarioUid: "",
+        usuarioNombre: email,
+        usuarioRol: "",
+        exito: false,
+        detalles: {
+          email,
+          error: resumenError(error)
+        }
+      });
+    } catch (errorAuditoria) {
+      console.warn("No se pudo registrar el intento fallido:", errorAuditoria);
+    }
+
     alert(error.message);
   }
 };
 
 window.cerrarSesion = async function() {
+  const user = auth.currentUser;
+  const datos = user ? await obtenerUsuario(user.uid) : null;
+
+  if (user) {
+    await registrarEventoAuditoria({
+      accion: "cierre_sesion",
+      modulo: "Autenticacion",
+      descripcion: "El usuario cerro sesion explicitamente.",
+      usuarioUid: user.uid,
+      usuarioNombre: datos?.nombre || user.email || "",
+      usuarioRol: datos?.rol || "",
+      exito: true
+    });
+  }
+
   await signOut(auth);
   window.location.href = "login.html";
 };
@@ -66,6 +115,17 @@ window.recuperarPassword = async function() {
 
     await sendPasswordResetEmail(auth, email);
 
+    await registrarEventoAuditoria({
+      accion: "solicitar_recuperacion_password",
+      modulo: "Autenticacion",
+      descripcion: "Se solicito recuperacion de contrasena.",
+      usuarioUid: "",
+      usuarioNombre: email,
+      usuarioRol: "",
+      exito: true,
+      detalles: { email }
+    });
+
     alert("Se envió un enlace para restablecer tu contraseña a tu correo electrónico.");
 
     window.location.href = "login.html";
@@ -73,6 +133,24 @@ window.recuperarPassword = async function() {
   } catch(error) {
 
     console.error(error);
+
+    try {
+      await registrarEventoAuditoria({
+        accion: "recuperacion_password_fallida",
+        modulo: "Autenticacion",
+        descripcion: "No se pudo enviar recuperacion de contrasena.",
+        usuarioUid: "",
+        usuarioNombre: email,
+        usuarioRol: "",
+        exito: false,
+        detalles: {
+          email,
+          error: resumenError(error)
+        }
+      });
+    } catch (errorAuditoria) {
+      console.warn("No se pudo registrar auditoria de recuperacion:", errorAuditoria);
+    }
 
     if (error.code === "auth/user-not-found") {
 

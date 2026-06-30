@@ -18,39 +18,36 @@ export async function registrarEventoAuditoria({
   exito = true,
   detalles = {}
 }) {
-
-    console.log("Entré a registrarEventoAuditoria");
-
   try {
-    const navegador = navigator.userAgent;
-    const idioma = navigator.language;
-    const plataforma = navigator.platform;
-
     await addDoc(collection(db, "auditoria"), {
       accion,
       modulo,
       descripcion,
-
       usuarioUid,
       usuarioNombre,
       usuarioRol,
-
       pacienteUid,
       pacienteNombre,
-
       exito,
       detalles,
-
-      navegador,
-      idioma,
-      plataforma,
-
+      navegador: navigator.userAgent,
+      idioma: navigator.language,
+      plataforma: navigator.platform,
+      ruta: window.location.pathname,
+      url: window.location.href,
       fecha: serverTimestamp(),
       fechaTexto: new Date().toISOString()
     });
-
   } catch (error) {
-  console.error("ERROR AUDITORÍA:", error);
-  throw error;
+    console.error("ERROR AUDITORIA:", error);
+    throw error;
+  }
 }
+
+export function resumenError(error) {
+  if (!error) return {};
+  return {
+    codigo: error.code || "",
+    mensaje: error.message || String(error)
+  };
 }

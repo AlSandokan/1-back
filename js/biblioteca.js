@@ -4,6 +4,7 @@ import { MEDICAMENTOS } from "./data/medicamentos.js";
 import { CIE10 } from "./data/cie10.js";
 import { CIE11 } from "./data/cie11.js";
 import { CRITERIOS_DIAGNOSTICOS, PSICOEDUCACION } from "./data/bibliotecaClinica.js";
+import { iniciarMonitoreoSesion } from "./services/sesion.js";
 
 import {
   onAuthStateChanged
@@ -11,6 +12,8 @@ import {
 
 let tabActual = "diagnosticos";
 let filtro = "";
+
+iniciarMonitoreoSesion("Biblioteca clinica");
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -48,6 +51,7 @@ function coincide(texto) {
 
 function render() {
   const panel = document.getElementById("panelBiblioteca");
+  panel.className = `grid ${tabActual === "diagnosticos" ? "diagnosticos-grid" : ""}`;
   if (tabActual === "vademecum") {
     panel.innerHTML = MEDICAMENTOS
       .filter((m) => coincide(`${m.nombre} ${m.clase} ${m.notas}`))
