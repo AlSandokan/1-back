@@ -21,6 +21,7 @@ iniciarMonitoreoSesion("Panel medico");
 
 let pacientesGlobal = [];
 let ordenPacientesActual = "nombre_asc";
+let filtrosAtencionActuales = new Set(["hospitalizados", "privado", "hpfba", "hpijnn", "otra"]);
 
 const INSTITUCIONES_ATENCION = {
   privado: {
@@ -88,6 +89,8 @@ onAuthStateChanged(auth, async (user) => {
       filtrarPacientes();
     });
   }
+
+  inicializarFiltroAtencion();
 });
 
 async function cargarPerfilMedico(user) {
@@ -322,6 +325,17 @@ function obtenerAtencionEn(paciente = {}) {
   return INSTITUCIONES_ATENCION[obtenerClaveAtencion(paciente)]?.etiqueta || "Otra...";
 }
 
+function obtenerCategoriasAtencion(paciente = {}) {
+  const clave = obtenerClaveAtencion(paciente);
+  const categorias = new Set([clave]);
+
+  if (clave !== "privado") {
+    categorias.add("hospitalizados");
+  }
+
+  return categorias;
+}
+
 function obtenerClaveAtencion(paciente = {}) {
   const institucional = paciente.datosInstitucionales || {};
   const tipoPaciente = String(paciente.tipoPaciente || institucional.tipoPaciente || "").toLowerCase();
@@ -492,6 +506,13 @@ function filtrarPacientes() {
   const texto = buscador ? buscador.value.toLowerCase() : "";
 
   const filtrados = pacientesGlobal.filter((paciente) => {
+    const categoriasAtencion = obtenerCategoriasAtencion(paciente);
+    const coincideFiltroAtencion = [...categoriasAtencion].some((categoria) =>
+      filtrosAtencionActuales.has(categoria)
+    );
+
+    if (!coincideFiltroAtencion) return false;
+
     const nombre = (paciente.nombre || "").toLowerCase();
     const cama = obtenerCamaPaciente(paciente).toLowerCase();
     const atencion = obtenerAtencionEn(paciente).toLowerCase();
@@ -500,6 +521,99 @@ function filtrarPacientes() {
   });
 
   mostrarPacientes(ordenarPacientes(filtrados));
+}
+
+function actualizarTextoFiltroAtencion() {
+  const boton = document.getElementById("btnFiltroAtencion");
+  if (!boton) return;
+
+  const totalFiltros = 5;
+  const activos = filtrosAtencionActuales.size;
+
+  if (activos === totalFiltros) {
+    boton.textContent = "Mostrar: todos";
+    return;
+  }
+
+  if (activos === 0) {
+    boton.textContent = "Mostrar: ninguno";
+    return;
+  }
+
+  boton.textContent = `Mostrar: ${activos} filtros`;
+}
+
+function sincronizarChecksFiltroAtencion() {
+  document.querySelectorAll(".filtro-atencion-check").forEach((check) => {
+    check.checked = filtrosAtencionActuales.has(check.value);
+  });
+}
+
+function abrirFiltroAtencion() {
+  const modal = document.getElementById("modalFiltroAtencion");
+  if (!modal) return;
+
+  sincronizarChecksFiltroAtencion();
+  modal.classList.add("abierto");
+  modal.setAttribute("aria-hidden", "false");
+}
+
+function cerrarFiltroAtencion() {
+  const modal = document.getElementById("modalFiltroAtencion");
+  if (!modal) return;
+
+  modal.classList.remove("abierto");
+  modal.setAttribute("aria-hidden", "true");
+}
+
+function aplicarFiltroAtencionDesdeModal() {
+  filtrosAtencionActuales = new Set(
+    [...document.querySelectorAll(".filtro-atencion-check:checked")].map((check) => check.value)
+  );
+  actualizarTextoFiltroAtencion();
+  filtrarPacientes();
+  cerrarFiltroAtencion();
+}
+
+function inicializarFiltroAtencion() {
+  const botonAbrir = document.getElementById("btnFiltroAtencion");
+  const botonCerrar = document.getElementById("cerrarFiltroAtencion");
+  const botonAplicar = document.getElementById("aplicarFiltroAtencion");
+  const botonTodos = document.getElementById("todosFiltroAtencion");
+  const botonLimpiar = document.getElementById("limpiarFiltroAtencion");
+  const modal = document.getElementById("modalFiltroAtencion");
+
+  actualizarTextoFiltroAtencion();
+
+  if (botonAbrir) botonAbrir.addEventListener("click", abrirFiltroAtencion);
+  if (botonCerrar) botonCerrar.addEventListener("click", cerrarFiltroAtencion);
+  if (botonAplicar) botonAplicar.addEventListener("click", aplicarFiltroAtencionDesdeModal);
+
+  if (botonTodos) {
+    botonTodos.addEventListener("click", () => {
+      document.querySelectorAll(".filtro-atencion-check").forEach((check) => {
+        check.checked = true;
+      });
+    });
+  }
+
+  if (botonLimpiar) {
+    botonLimpiar.addEventListener("click", () => {
+      document.querySelectorAll(".filtro-atencion-check").forEach((check) => {
+        check.checked = false;
+      });
+    });
+  }
+
+  if (modal) {
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) cerrarFiltroAtencion();
+    });
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") cerrarFiltroAtencion();
+  });
 }
 
 function calcularEstadisticas(pacientes) {

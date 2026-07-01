@@ -109,6 +109,10 @@
             <option value="atencion_asc">Atencion en: A-Z</option>
           </select>
 
+          <button type="button" id="btnFiltroAtencion" class="boton-filtro-atencion">
+            Mostrar: todos
+          </button>
+
         <button onclick="window.location.href='nuevo-paciente.html'">
           Nuevo paciente
         </button>
@@ -118,6 +122,47 @@
           onclick="window.location.href='admin.html'">
           Centro de Control
         </button>
+        </div>
+
+        <div id="modalFiltroAtencion" class="modal-filtro-atencion" aria-hidden="true">
+          <div class="panel-filtro-atencion" role="dialog" aria-modal="true" aria-labelledby="tituloFiltroAtencion">
+            <div class="encabezado-filtro-atencion">
+              <div>
+                <p class="etiqueta-filtro-atencion">Vista de pacientes</p>
+                <h3 id="tituloFiltroAtencion">Mostrar pacientes</h3>
+              </div>
+              <button type="button" id="cerrarFiltroAtencion" class="cerrar-filtro-atencion" aria-label="Cerrar filtro">×</button>
+            </div>
+
+            <div class="opciones-filtro-atencion">
+              <label>
+                <input type="checkbox" class="filtro-atencion-check" value="hospitalizados" checked>
+                <span>Hospitalizados / institución</span>
+              </label>
+              <label>
+                <input type="checkbox" class="filtro-atencion-check" value="privado" checked>
+                <span>Privados</span>
+              </label>
+              <label>
+                <input type="checkbox" class="filtro-atencion-check" value="hpfba" checked>
+                <span>HPFBA</span>
+              </label>
+              <label>
+                <input type="checkbox" class="filtro-atencion-check" value="hpijnn" checked>
+                <span>HPIJNN</span>
+              </label>
+              <label>
+                <input type="checkbox" class="filtro-atencion-check" value="otra" checked>
+                <span>Otras instituciones</span>
+              </label>
+            </div>
+
+            <div class="acciones-filtro-atencion">
+              <button type="button" id="limpiarFiltroAtencion" class="boton-secundario-filtro">Limpiar</button>
+              <button type="button" id="todosFiltroAtencion" class="boton-secundario-filtro">Todos</button>
+              <button type="button" id="aplicarFiltroAtencion">Aplicar</button>
+            </div>
+          </div>
         </div>
 
         <div class="tabla-pacientes">
