@@ -557,6 +557,8 @@ body {
 .cama-columna {
   color: #e0f2fe;
   font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.03em;
 }
 
 .atencion-columna {

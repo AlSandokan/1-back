@@ -20,7 +20,8 @@ const ADMIN_UID = "NQ0CU5PSDBUgVrk56sjPEVhOs2D3";
 iniciarMonitoreoSesion("Panel medico");
 
 let pacientesGlobal = [];
-let ordenPacientesActual = "nombre_asc";
+const STORAGE_ORDEN_PACIENTES = "cognicion.medico.ordenPacientes";
+let ordenPacientesActual = cargarPreferenciaOrdenPacientes();
 const FILTROS_ATENCION_DEFAULT = ["hospitalizados", "privado", "hpfba", "hpijnn", "otra"];
 const STORAGE_FILTROS_ATENCION = "cognicion.medico.filtrosAtencion";
 let filtrosAtencionActuales = cargarPreferenciasFiltroAtencion();
@@ -103,6 +104,7 @@ onAuthStateChanged(auth, async (user) => {
     selectorOrden.value = ordenPacientesActual;
     selectorOrden.addEventListener("change", () => {
       ordenPacientesActual = selectorOrden.value;
+      guardarPreferenciaOrdenPacientes();
       filtrarPacientes();
     });
   }
@@ -666,6 +668,23 @@ function filtrarPacientes() {
   });
 
   mostrarPacientes(ordenarPacientes(filtrados));
+}
+
+function cargarPreferenciaOrdenPacientes() {
+  try {
+    return localStorage.getItem(STORAGE_ORDEN_PACIENTES) || "nombre_asc";
+  } catch (error) {
+    console.warn("No se pudo cargar el orden de pacientes:", error);
+    return "nombre_asc";
+  }
+}
+
+function guardarPreferenciaOrdenPacientes() {
+  try {
+    localStorage.setItem(STORAGE_ORDEN_PACIENTES, ordenPacientesActual);
+  } catch (error) {
+    console.warn("No se pudo guardar el orden de pacientes:", error);
+  }
 }
 
 function cargarPreferenciasFiltroAtencion() {
