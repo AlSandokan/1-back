@@ -145,28 +145,52 @@ function obtenerFechaIngreso(datos = {}) {
   );
 }
 
+function parsearFechaIngreso(fechaIngreso) {
+  if (!fechaIngreso) return null;
+
+  const valor = String(fechaIngreso);
+  const fecha = valor.includes("T")
+    ? new Date(valor)
+    : new Date(`${valor}T00:00:00`);
+
+  return Number.isNaN(fecha.getTime()) ? null : fecha;
+}
+
 function calcularDiasEstancia(fechaIngreso) {
-  if (!fechaIngreso) return "";
+  const ingreso = parsearFechaIngreso(fechaIngreso);
+  if (!ingreso) return null;
 
-  const ingreso = new Date(`${fechaIngreso}T00:00:00`);
-  if (Number.isNaN(ingreso.getTime())) return "";
+  const diferencia = Date.now() - ingreso.getTime();
+  if (diferencia < 0) return null;
 
-  const hoy = new Date();
-  const hoyLocal = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
-  const diferencia = hoyLocal.getTime() - ingreso.getTime();
+  const horasTotales = Math.floor(diferencia / 3600000);
+  const dias = Math.floor(horasTotales / 24);
+  const horas = horasTotales % 24;
 
-  if (diferencia < 0) return "";
+  return { dias, horas, horasTotales };
+}
 
-  return Math.floor(diferencia / 86400000) + 1;
+function formatearEstancia(estancia) {
+  if (!estancia) return "Sin registro";
+  if (estancia.horasTotales < 1) return "Menos de 1 h";
+
+  const partes = [];
+  if (estancia.dias > 0) {
+    partes.push(`${estancia.dias} dia${estancia.dias === 1 ? "" : "s"}`);
+  }
+  partes.push(`${estancia.horas} h`);
+
+  return partes.join(" ");
 }
 
 function formatearFecha(fecha) {
   if (!fecha) return "Sin registro";
 
-  const partes = fecha.split("-");
+  const [soloFecha, hora] = String(fecha).split("T");
+  const partes = soloFecha.split("-");
   if (partes.length !== 3) return fecha;
 
-  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  return hora ? `${partes[2]}/${partes[1]}/${partes[0]} ${hora}` : `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
 function escaparHTML(valor) {
@@ -479,6 +503,18 @@ async function cargarDatosPaciente() {
   document.getElementById("fechaIngresoPaciente").innerText =
     formatearFecha(fechaIngreso);
 
+  document.getElementById("medicoAdscritoEncargadoPaciente").innerText =
+    datos.medicoAdscritoEncargado ||
+    datos.datosInstitucionales?.medicoAdscritoEncargado ||
+    datos.medicoAdscrito ||
+    "Sin registro";
+
+  document.getElementById("residenteEncargadoPaciente").innerText =
+    datos.residenteEncargado ||
+    datos.datosInstitucionales?.residenteEncargado ||
+    datos.medicoResidente ||
+    "Sin registro";
+
   document.getElementById("sexoPaciente").innerText =
     datos.sexo || "Sin registro";
 
@@ -489,7 +525,7 @@ async function cargarDatosPaciente() {
     datos.alergias || "Sin registro";
 
   document.getElementById("diasEstanciaPaciente").innerText =
-    diasEstancia ? `${diasEstancia} dia${diasEstancia === 1 ? "" : "s"}` : "Sin registro";
+    formatearEstancia(diasEstancia);
 }
 
 window.mostrarResumen = function() {
@@ -919,6 +955,8 @@ window.editarCampoPaciente = async function(campo, etiqueta, tipo = "text") {
     nuevoValor = prompt(`${etiquetaCampo}:`, valorActual);
   } else if (tipo === "date") {
     nuevoValor = prompt(`${etiquetaCampo} (AAAA-MM-DD):`, valorActual);
+  } else if (tipo === "datetime") {
+    nuevoValor = prompt(`${etiquetaCampo} (AAAA-MM-DDTHH:mm):`, valorActual);
   } else if (tipo === "number") {
     nuevoValor = prompt(`${etiquetaCampo}:`, valorActual);
   } else {
@@ -938,6 +976,8 @@ window.editarCampoPaciente = async function(campo, etiqueta, tipo = "text") {
     "expediente",
     "cama",
     "fechaIngreso",
+    "medicoAdscritoEncargado",
+    "residenteEncargado",
     "fechaNacimiento",
     "sexo",
     "genero",

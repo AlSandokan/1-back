@@ -25,6 +25,23 @@ const FILTROS_ATENCION_DEFAULT = ["hospitalizados", "privado", "hpfba", "hpijnn"
 const STORAGE_FILTROS_ATENCION = "cognicion.medico.filtrosAtencion";
 let filtrosAtencionActuales = cargarPreferenciasFiltroAtencion();
 
+const COLUMNAS_PACIENTES = [
+  { key: "cama", label: "Cama", cssVar: "--col-cama" },
+  { key: "nombre", label: "Nombre", cssVar: "--col-nombre", obligatoria: true },
+  { key: "ingreso", label: "Ingreso", cssVar: "--col-ingreso" },
+  { key: "estancia", label: "Estancia", cssVar: "--col-estancia" },
+  { key: "edad", label: "Edad", cssVar: "--col-edad" },
+  { key: "atencion", label: "Atencion en", cssVar: "--col-atencion" },
+  { key: "diagnostico", label: "Diagnostico", cssVar: "--col-diagnostico" },
+  { key: "ultima", label: "Ultima consulta", cssVar: "--col-ultima" },
+  { key: "proxima", label: "Proxima consulta", cssVar: "--col-proxima" },
+  { key: "adscrito", label: "Adscrito", cssVar: "--col-adscrito" },
+  { key: "residente", label: "Residente", cssVar: "--col-residente" }
+];
+const COLUMNAS_PACIENTES_DEFAULT = COLUMNAS_PACIENTES.map((columna) => columna.key);
+const STORAGE_COLUMNAS_PACIENTES = "cognicion.medico.columnasPacientes";
+let columnasPacientesVisibles = cargarPreferenciasColumnasPacientes();
+
 const INSTITUCIONES_ATENCION = {
   privado: {
     etiqueta: "Privado",
@@ -74,8 +91,6 @@ onAuthStateChanged(auth, async (user) => {
 
   console.log("UID del médico:", user.uid);
 
-  await cargarPacientes(user.uid);
-
   const buscador = document.getElementById("buscadorPacientes");
 
   if (buscador) {
@@ -93,6 +108,9 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   inicializarFiltroAtencion();
+  inicializarColumnasPacientes();
+
+  await cargarPacientes(user.uid);
 });
 
 async function cargarPerfilMedico(user) {
@@ -175,7 +193,7 @@ async function cargarPacientes(uidMedico) {
     }
   }
 
-  mostrarPacientes(ordenarPacientes(pacientesGlobal));
+  filtrarPacientes();
   calcularEstadisticas(pacientesGlobal);
   renderizarGraficasMedico(pacientesGlobal);
 }
@@ -310,28 +328,74 @@ function obtenerFechaIngreso(paciente = {}) {
   );
 }
 
+function obtenerMedicoAdscritoEncargado(paciente = {}) {
+  const institucional = paciente.datosInstitucionales || {};
+  return (
+    paciente.medicoAdscritoEncargado ||
+    institucional.medicoAdscritoEncargado ||
+    paciente.medicoAdscrito ||
+    institucional.medicoAdscrito ||
+    "Sin registro"
+  );
+}
+
+function obtenerResidenteEncargado(paciente = {}) {
+  const institucional = paciente.datosInstitucionales || {};
+  return (
+    paciente.residenteEncargado ||
+    institucional.residenteEncargado ||
+    paciente.medicoResidente ||
+    institucional.medicoResidente ||
+    "Sin registro"
+  );
+}
+
 function formatearFechaCorta(fecha) {
   if (!fecha) return "Sin registro";
 
-  const partes = String(fecha).split("-");
+  const [soloFecha, hora] = String(fecha).split("T");
+  const partes = soloFecha.split("-");
   if (partes.length !== 3) return fecha;
 
-  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  return hora ? `${partes[2]}/${partes[1]}/${partes[0]} ${hora}` : `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+function parsearFechaIngreso(fechaIngreso) {
+  if (!fechaIngreso) return null;
+
+  const valor = String(fechaIngreso);
+  const fecha = valor.includes("T")
+    ? new Date(valor)
+    : new Date(`${valor}T00:00:00`);
+
+  return Number.isNaN(fecha.getTime()) ? null : fecha;
 }
 
 function calcularDiasEstancia(fechaIngreso) {
-  if (!fechaIngreso) return "";
+  const ingreso = parsearFechaIngreso(fechaIngreso);
+  if (!ingreso) return null;
 
-  const ingreso = new Date(`${fechaIngreso}T00:00:00`);
-  if (Number.isNaN(ingreso.getTime())) return "";
+  const diferencia = Date.now() - ingreso.getTime();
+  if (diferencia < 0) return null;
 
-  const hoy = new Date();
-  const hoyLocal = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
-  const diferencia = hoyLocal.getTime() - ingreso.getTime();
+  const horasTotales = Math.floor(diferencia / 3600000);
+  const dias = Math.floor(horasTotales / 24);
+  const horas = horasTotales % 24;
 
-  if (diferencia < 0) return "";
+  return { dias, horas, horasTotales };
+}
 
-  return Math.floor(diferencia / 86400000) + 1;
+function formatearEstancia(estancia) {
+  if (!estancia) return "Sin registro";
+  if (estancia.horasTotales < 1) return "Menos de 1 h";
+
+  const partes = [];
+  if (estancia.dias > 0) {
+    partes.push(`${estancia.dias} d`);
+  }
+  partes.push(`${estancia.horas} h`);
+
+  return partes.join(" ");
 }
 
 function obtenerExpedienteCognicion(paciente = {}) {
@@ -518,10 +582,7 @@ function mostrarPacientes(pacientes) {
     const cama = obtenerCamaPaciente(paciente);
     const fechaIngresoRaw = obtenerFechaIngreso(paciente);
     const fechaIngreso = formatearFechaCorta(fechaIngresoRaw);
-    const diasEstanciaValor = calcularDiasEstancia(fechaIngresoRaw);
-    const diasEstancia = diasEstanciaValor
-      ? `${diasEstanciaValor} d\u00eda${diasEstanciaValor === 1 ? "" : "s"}`
-      : "Sin registro";
+    const diasEstancia = formatearEstancia(calcularDiasEstancia(fechaIngresoRaw));
     const edadValor = calcularEdad(obtenerFechaNacimiento(paciente));
     const edad = edadValor ? `${edadValor} a\u00f1os` : "No registrada";
     const claveAtencion = obtenerClaveAtencion(paciente);
@@ -542,30 +603,36 @@ function mostrarPacientes(pacientes) {
       : "";
     const ultimaConsulta = paciente.ultimaConsulta || "Sin registro";
     const proximaConsulta = paciente.proximaConsulta || "Sin programar";
+    const medicoAdscrito = obtenerMedicoAdscritoEncargado(paciente);
+    const residente = obtenerResidenteEncargado(paciente);
 
     lista.innerHTML += `
       <a class="fila-paciente" href="paciente.html?id=${paciente.id}">
-        <span class="paciente-dato cama-columna">${cama}</span>
-        <span class="paciente-nombre">${nombre}</span>
-        <span class="paciente-dato">${fechaIngreso}</span>
-        <span class="paciente-dato">${diasEstancia}</span>
-        <span class="paciente-dato">${edad}</span>
-        <span class="paciente-dato atencion-columna">
+        <span class="paciente-dato cama-columna" data-col-key="cama">${cama}</span>
+        <span class="paciente-nombre" data-col-key="nombre">${nombre}</span>
+        <span class="paciente-dato" data-col-key="ingreso">${fechaIngreso}</span>
+        <span class="paciente-dato" data-col-key="estancia">${diasEstancia}</span>
+        <span class="paciente-dato" data-col-key="edad">${edad}</span>
+        <span class="paciente-dato atencion-columna" data-col-key="atencion">
           <select class="selector-atencion" data-paciente-id="${paciente.id}" aria-label="Atencion en">
             ${opcionesAtencionHTML(claveAtencion)}
           </select>
         </span>
-        <span class="paciente-dato diagnostico-columna">
+        <span class="paciente-dato diagnostico-columna" data-col-key="diagnostico">
         <span class="diagnostico-texto">
           <span class="diagnostico-principal">${diagnosticoPrincipal}</span>
           ${secundariosHtml}
         </span>
         </span>
-        <span class="paciente-dato">${ultimaConsulta}</span>
-        <span class="paciente-dato">${proximaConsulta}</span>
+        <span class="paciente-dato" data-col-key="ultima">${ultimaConsulta}</span>
+        <span class="paciente-dato" data-col-key="proxima">${proximaConsulta}</span>
+        <span class="paciente-dato" data-col-key="adscrito">${medicoAdscrito}</span>
+        <span class="paciente-dato" data-col-key="residente">${residente}</span>
       </a>
     `;
   });
+
+  aplicarColumnasPacientes();
 }
 
 function filtrarPacientes() {
@@ -583,9 +650,11 @@ function filtrarPacientes() {
     const nombre = (paciente.nombre || "").toLowerCase();
     const cama = obtenerCamaPaciente(paciente).toLowerCase();
     const fechaIngreso = formatearFechaCorta(obtenerFechaIngreso(paciente)).toLowerCase();
+    const medicoAdscrito = obtenerMedicoAdscritoEncargado(paciente).toLowerCase();
+    const residente = obtenerResidenteEncargado(paciente).toLowerCase();
     const atencion = obtenerAtencionEn(paciente).toLowerCase();
     const diagnostico = formatearDiagnostico(obtenerDiagnosticosPaciente(paciente).principal).toLowerCase();
-    return [nombre, cama, fechaIngreso, atencion, diagnostico].some((valor) => valor.includes(texto));
+    return [nombre, cama, fechaIngreso, medicoAdscrito, residente, atencion, diagnostico].some((valor) => valor.includes(texto));
   });
 
   mostrarPacientes(ordenarPacientes(filtrados));
@@ -616,6 +685,157 @@ function guardarPreferenciasFiltroAtencion() {
   } catch (error) {
     console.warn("No se pudieron guardar las preferencias de pacientes:", error);
   }
+}
+
+function cargarPreferenciasColumnasPacientes() {
+  try {
+    const guardado = localStorage.getItem(STORAGE_COLUMNAS_PACIENTES);
+    if (!guardado) return new Set(COLUMNAS_PACIENTES_DEFAULT);
+
+    const columnas = JSON.parse(guardado);
+    if (!Array.isArray(columnas)) return new Set(COLUMNAS_PACIENTES_DEFAULT);
+
+    const clavesValidas = new Set(COLUMNAS_PACIENTES.map((columna) => columna.key));
+    const visibles = columnas.filter((columna) => clavesValidas.has(columna));
+
+    if (!visibles.includes("nombre")) visibles.push("nombre");
+
+    return new Set(visibles.length ? visibles : COLUMNAS_PACIENTES_DEFAULT);
+  } catch (error) {
+    console.warn("No se pudieron cargar las columnas de pacientes:", error);
+    return new Set(COLUMNAS_PACIENTES_DEFAULT);
+  }
+}
+
+function guardarPreferenciasColumnasPacientes() {
+  try {
+    localStorage.setItem(
+      STORAGE_COLUMNAS_PACIENTES,
+      JSON.stringify([...columnasPacientesVisibles])
+    );
+  } catch (error) {
+    console.warn("No se pudieron guardar las columnas de pacientes:", error);
+  }
+}
+
+function asignarClavesEncabezadoColumnas() {
+  const encabezados = document.querySelectorAll(".encabezado-pacientes .celda-tabla");
+  encabezados.forEach((celda, index) => {
+    const columna = COLUMNAS_PACIENTES[index];
+    if (columna) celda.dataset.colKey = columna.key;
+  });
+}
+
+function aplicarColumnasPacientes() {
+  asignarClavesEncabezadoColumnas();
+
+  const visibles = COLUMNAS_PACIENTES.filter((columna) =>
+    columnasPacientesVisibles.has(columna.key)
+  );
+  const columnasGrid = visibles.map((columna, index) => {
+    const valor = `var(${columna.cssVar})`;
+    return index === visibles.length - 1 ? `minmax(${valor}, 1fr)` : valor;
+  }).join(" ");
+  const minWidth = visibles.map((columna) => `var(${columna.cssVar})`).join(" + ");
+  const tabla = document.querySelector(".tabla-pacientes");
+
+  if (tabla && minWidth) {
+    tabla.style.setProperty("--tabla-min-width", `calc(${minWidth})`);
+  }
+
+  document.querySelectorAll(".encabezado-pacientes, .fila-paciente").forEach((fila) => {
+    fila.style.gridTemplateColumns = columnasGrid;
+  });
+
+  document.querySelectorAll("[data-col-key]").forEach((celda) => {
+    celda.classList.toggle("columna-oculta", !columnasPacientesVisibles.has(celda.dataset.colKey));
+  });
+
+  actualizarTextoColumnasPacientes();
+}
+
+function actualizarTextoColumnasPacientes() {
+  const boton = document.getElementById("btnColumnasPacientes");
+  if (!boton) return;
+
+  const visibles = columnasPacientesVisibles.size;
+  const total = COLUMNAS_PACIENTES.length;
+  boton.textContent = visibles === total
+    ? "Mostrar Columnas..."
+    : `Columnas: ${visibles}/${total}`;
+}
+
+function renderizarOpcionesColumnasPacientes() {
+  const contenedor = document.getElementById("opcionesColumnasPacientes");
+  if (!contenedor) return;
+
+  contenedor.innerHTML = COLUMNAS_PACIENTES.map((columna) => `
+    <label>
+      <input
+        type="checkbox"
+        class="columna-paciente-check"
+        value="${columna.key}"
+        ${columnasPacientesVisibles.has(columna.key) ? "checked" : ""}
+        ${columna.obligatoria ? "disabled" : ""}
+      >
+      <span>${columna.label}${columna.obligatoria ? " (siempre visible)" : ""}</span>
+    </label>
+  `).join("");
+}
+
+function abrirColumnasPacientes() {
+  const modal = document.getElementById("modalColumnasPacientes");
+  if (!modal) return;
+
+  renderizarOpcionesColumnasPacientes();
+  modal.classList.add("abierto");
+  modal.setAttribute("aria-hidden", "false");
+}
+
+function cerrarColumnasPacientes() {
+  const modal = document.getElementById("modalColumnasPacientes");
+  if (!modal) return;
+
+  modal.classList.remove("abierto");
+  modal.setAttribute("aria-hidden", "true");
+}
+
+function aplicarColumnasDesdeModal() {
+  const seleccionadas = [...document.querySelectorAll(".columna-paciente-check:checked")]
+    .map((check) => check.value);
+
+  if (!seleccionadas.includes("nombre")) seleccionadas.push("nombre");
+
+  columnasPacientesVisibles = new Set(seleccionadas);
+  guardarPreferenciasColumnasPacientes();
+  aplicarColumnasPacientes();
+  cerrarColumnasPacientes();
+}
+
+function inicializarColumnasPacientes() {
+  actualizarTextoColumnasPacientes();
+  aplicarColumnasPacientes();
+
+  document.getElementById("btnColumnasPacientes")?.addEventListener("click", abrirColumnasPacientes);
+  document.getElementById("cerrarColumnasPacientes")?.addEventListener("click", cerrarColumnasPacientes);
+  document.getElementById("aplicarColumnasPacientes")?.addEventListener("click", aplicarColumnasDesdeModal);
+
+  document.getElementById("todasColumnasPacientes")?.addEventListener("click", () => {
+    document.querySelectorAll(".columna-paciente-check").forEach((check) => {
+      check.checked = true;
+    });
+  });
+
+  document.getElementById("restaurarColumnasPacientes")?.addEventListener("click", () => {
+    columnasPacientesVisibles = new Set(COLUMNAS_PACIENTES_DEFAULT);
+    guardarPreferenciasColumnasPacientes();
+    renderizarOpcionesColumnasPacientes();
+    aplicarColumnasPacientes();
+  });
+
+  document.getElementById("modalColumnasPacientes")?.addEventListener("click", (e) => {
+    if (e.target.id === "modalColumnasPacientes") cerrarColumnasPacientes();
+  });
 }
 
 function actualizarTextoFiltroAtencion() {
@@ -708,7 +928,10 @@ function inicializarFiltroAtencion() {
   }
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") cerrarFiltroAtencion();
+    if (e.key === "Escape") {
+      cerrarFiltroAtencion();
+      cerrarColumnasPacientes();
+    }
   });
 }
 

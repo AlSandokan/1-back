@@ -82,6 +82,7 @@ window.guardarPacienteNuevo = async function() {
   const servicioInstitucional = document.getElementById("servicioInstitucional")?.value || "";
   const expediente = document.getElementById("expediente")?.value || "";
   const cama = document.getElementById("cama")?.value || "";
+  const fechaIngreso = document.getElementById("fechaIngreso")?.value || "";
   const genero = document.getElementById("genero")?.value || "";
   const alergias = document.getElementById("alergias")?.value || "";
   const diasEstancia = document.getElementById("diasEstancia")?.value || "";
@@ -107,6 +108,7 @@ window.guardarPacienteNuevo = async function() {
     expediente,
     numeroExpediente: expediente,
     cama,
+    fechaIngreso,
     alergias,
     diasEstancia,
     datosInstitucionales: {
@@ -117,6 +119,7 @@ window.guardarPacienteNuevo = async function() {
       servicioInstitucional,
       expediente,
       cama,
+      fechaIngreso,
       fechaNacimiento,
       sexo: document.getElementById("sexo").value,
       genero,

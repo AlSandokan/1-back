@@ -115,6 +115,10 @@
             Mostrar: todos
           </button>
 
+          <button type="button" id="btnColumnasPacientes" class="boton-filtro-atencion">
+            Mostrar Columnas...
+          </button>
+
         <button onclick="window.location.href='nuevo-paciente.html'">
           Nuevo paciente
         </button>
@@ -167,6 +171,26 @@
           </div>
         </div>
 
+        <div id="modalColumnasPacientes" class="modal-filtro-atencion" aria-hidden="true">
+          <div class="panel-filtro-atencion" role="dialog" aria-modal="true" aria-labelledby="tituloColumnasPacientes">
+            <div class="encabezado-filtro-atencion">
+              <div>
+                <p class="etiqueta-filtro-atencion">Tabla de pacientes</p>
+                <h3 id="tituloColumnasPacientes">Mostrar columnas</h3>
+              </div>
+              <button type="button" id="cerrarColumnasPacientes" class="cerrar-filtro-atencion" aria-label="Cerrar columnas">×</button>
+            </div>
+
+            <div id="opcionesColumnasPacientes" class="opciones-filtro-atencion"></div>
+
+            <div class="acciones-filtro-atencion">
+              <button type="button" id="restaurarColumnasPacientes" class="boton-secundario-filtro">Restaurar</button>
+              <button type="button" id="todasColumnasPacientes" class="boton-secundario-filtro">Todas</button>
+              <button type="button" id="aplicarColumnasPacientes">Aplicar</button>
+            </div>
+          </div>
+        </div>
+
         <div class="tabla-pacientes">
 
   <div class="encabezado-pacientes">
@@ -180,6 +204,8 @@
   <span class="celda-tabla">Última consulta <button class="resizer" data-col="--col-ultima" aria-label="Ajustar columna Última consulta"></button></span>
   <span class="celda-tabla">Próxima consulta <button class="resizer" data-col="--col-proxima" aria-label="Ajustar columna Próxima consulta"></button></span>
 
+  <span class="celda-tabla">Adscrito <button class="resizer" data-col="--col-adscrito" aria-label="Ajustar columna Medico adscrito encargado"></button></span>
+  <span class="celda-tabla">Residente <button class="resizer" data-col="--col-residente" aria-label="Ajustar columna Residente encargado"></button></span>
 </div>
 
   <div id="listaPacientes" class="lista-pacientes">

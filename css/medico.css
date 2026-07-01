@@ -451,10 +451,12 @@ body {
   --col-diagnostico: 470px;
   --col-ultima: 125px;
   --col-proxima: 235px;
+  --col-adscrito: 170px;
+  --col-residente: 170px;
   --tabla-min-width: calc(
     var(--col-cama) + var(--col-nombre) + var(--col-ingreso) + var(--col-estancia) +
     var(--col-edad) + var(--col-atencion) + var(--col-diagnostico) +
-    var(--col-ultima) + var(--col-proxima)
+    var(--col-ultima) + var(--col-proxima) + var(--col-adscrito) + var(--col-residente)
   );
   margin-top: 14px;
   width: 100%;
@@ -479,7 +481,9 @@ body {
     var(--col-atencion)
     var(--col-diagnostico)
     var(--col-ultima)
-    minmax(var(--col-proxima), 1fr);
+    var(--col-proxima)
+    var(--col-adscrito)
+    minmax(var(--col-residente), 1fr);
   align-items: stretch;
   width: max(100%, var(--tabla-min-width));
 }
@@ -523,6 +527,10 @@ body {
 .celda-tabla:last-child,
 .fila-paciente > span:last-child {
   border-right: none;
+}
+
+.columna-oculta {
+  display: none !important;
 }
 
 .fila-paciente:hover {
