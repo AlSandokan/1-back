@@ -1061,14 +1061,39 @@ async function htmlWordFrayObservacion() {
           xmlns:w="urn:schemas-microsoft-com:office:word"
           xmlns="http://www.w3.org/TR/REC-html40">
     <head>
-      <meta charset="UTF-8">
-      <title>Nota Observacion Fray Bernardino</title>
-      <style>
-        @page { margin: 1.27cm; }
-        body { font-family: Arial, sans-serif; font-size: 9pt; color: #111; }
+          <meta charset="UTF-8">
+          <title>Nota Observacion Fray Bernardino</title>
+          <!--[if gte mso 9]>
+          <xml>
+            <w:WordDocument>
+              <w:View>Print</w:View>
+              <w:Zoom>100</w:Zoom>
+              <w:DoNotOptimizeForBrowser/>
+            </w:WordDocument>
+          </xml>
+          <![endif]-->
+          
+          <style>
+    @page WordSection1 {
+      size: 21.59cm 27.94cm;
+      margin: 1.27cm 1.27cm 1.27cm 1.27cm;
+    }
+
+    div.WordSection1 {
+      page: WordSection1;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 9pt;
+      color: #111;
+      margin: 0;
+      padding: 0;
+    }
+
         .encabezado { width: 100%; table-layout: fixed; border-collapse: collapse; margin: 0 0 8pt; border-bottom: 1px dashed #777; }
         .encabezado td { border: none; vertical-align: middle; padding: 0 0 4pt; }
-        .encabezado-logo-izq { width: 24%; text-align: left; }
+        .encabezado-logo-izq { width: 20%; text-align: left; }
         .encabezado-centro { width: 62%; text-align: center; font-weight: 700; font-size: 11pt; line-height: 1.12; text-transform: uppercase; white-space: nowrap; }
         .encabezado-logo-der { width: 14%; text-align: right; }
         .logo-salud { width: 118px; }
@@ -1094,9 +1119,17 @@ async function htmlWordFrayObservacion() {
       </style>
     </head>
     <body>
-      <table class="encabezado">
+        <div class="WordSection1">
+          <table class="encabezado">
         <tr>
-          <td class="encabezado-logo-izq"><img class="logo-salud" src="${logoSalud}"></td>
+          <td class="encabezado-logo-izq">
+            <img
+              class="logo-salud"
+              src="${logoSalud}"
+              style="width:2.8cm;height:auto;"
+              width="106"
+            >
+          </td>
           <td class="encabezado-centro">
             SECRETARIA DE SALUD<br>
             COMISION NACIONAL DE SALUD MENTAL Y ADICCIONES<br>
@@ -1137,7 +1170,8 @@ async function htmlWordFrayObservacion() {
       <p class="pronostico-destino"><b>DESTINO:</b> ${textoWord(datos.destino)}</p>
       <h2>NOMBRE, FIRMA Y CEDULA PROFESIONAL DEL MEDICO QUE REALIZA Y SUPERVISA:</h2>
       ${firmas}
-    </body>
+      </div>
+      </body>
     </html>
   `;
 }
