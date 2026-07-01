@@ -373,6 +373,96 @@ button:hover{
     margin: 0;
 }
 
+.notas-flotantes-costado {
+    position: fixed;
+    top: 116px;
+    right: 18px;
+    z-index: 120;
+    display: grid;
+    gap: 12px;
+    width: min(300px, calc(100vw - 36px));
+    max-height: calc(100vh - 140px);
+    overflow: auto;
+    pointer-events: none;
+}
+
+.notas-flotantes-costado.con-notas {
+    pointer-events: auto;
+}
+
+.nota-flotante-costado {
+    border: 1px solid rgba(56,189,248,0.3);
+    border-radius: 18px;
+    background:
+        radial-gradient(circle at top right, rgba(56,189,248,0.12), transparent 38%),
+        rgba(8,12,20,0.94);
+    box-shadow: 0 18px 46px rgba(0,0,0,0.32), 0 0 24px rgba(56,189,248,0.08);
+    overflow: hidden;
+    transform: translateX(12px);
+    opacity: 0;
+    animation: entrarNotaFlotante 0.22s ease forwards;
+}
+
+.nota-flotante-costado-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 0;
+    padding: 12px 14px;
+    border: none;
+    border-radius: 0;
+    background: rgba(15,23,42,0.62);
+    color: #eaf4ff;
+    text-align: left;
+    box-shadow: none;
+}
+
+.nota-flotante-costado-header span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 900;
+}
+
+.nota-flotante-costado-header small {
+    color: #7dd3fc;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.nota-flotante-costado-cuerpo {
+    display: grid;
+    gap: 10px;
+    padding: 12px 14px 14px;
+    transition: max-height 0.22s ease, opacity 0.2s ease, padding 0.2s ease;
+}
+
+.nota-flotante-costado-cuerpo p {
+    margin: 0;
+    color: #dbeafe;
+    line-height: 1.5;
+    max-height: 220px;
+    overflow: auto;
+}
+
+.nota-flotante-costado.contraida .nota-flotante-costado-cuerpo {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+}
+
+@keyframes entrarNotaFlotante {
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
 @keyframes aparecerFondoBorradores {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -677,6 +767,9 @@ button:hover{
     }
 
     .barra-superior,
+    .notas-flotantes-costado,
+    .panel-notas-flotantes-paciente,
+    #fondoNotasFlotantesPaciente,
     .panel-escala-nota,
     button,
     select,
@@ -850,7 +943,63 @@ button:hover{
   min-height: 74px;
 }
 
+.diagnosticos-editables-tabla {
+  display: grid;
+  gap: 0;
+  margin: 14px 0 20px;
+  border: 1px solid rgba(56,189,248,0.24);
+  border-radius: 18px;
+  background: rgba(8,12,20,0.62);
+  overflow: hidden;
+}
+
+.diagnosticos-editables-head,
+.diagnosticos-editables-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.45fr) minmax(260px, 1.4fr) minmax(120px, 0.45fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+}
+
+.diagnosticos-editables-head {
+  color: #7dd3fc;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: rgba(15,23,42,0.7);
+  border-bottom: 1px solid rgba(148,163,184,0.16);
+}
+
+.diagnosticos-editables-row {
+  border-bottom: 1px solid rgba(148,163,184,0.12);
+}
+
+.diagnosticos-editables-row:last-child {
+  border-bottom: none;
+}
+
+.diagnosticos-editables-row input,
+.diagnosticos-editables-row select {
+  margin: 0;
+}
+
+.diagnosticos-editables-row button {
+  margin: 0;
+  white-space: nowrap;
+}
+
 @media (max-width: 800px) {
+  .notas-flotantes-costado {
+    top: auto;
+    right: 12px;
+    left: 12px;
+    bottom: 12px;
+    width: auto;
+    max-height: 42vh;
+  }
+
   .apuntes-layout {
     grid-template-columns: 1fr;
   }
@@ -884,6 +1033,14 @@ button:hover{
   .diagnostico-manual-nota,
   .diagnostico-editable-header,
   .diagnostico-editable-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .diagnosticos-editables-head {
+    display: none;
+  }
+
+  .diagnosticos-editables-row {
     grid-template-columns: 1fr;
   }
 }

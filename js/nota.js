@@ -371,48 +371,42 @@ function renderizarDiagnosticosSeleccionadosEditable() {
     return;
   }
 
-  ["CIE-10", "CIE-11", "Manual"].forEach((catalogo) => {
-    const diagnosticos = diagnosticosSeleccionados
-      .map((dx, index) => ({ ...dx, index }))
-      .filter((dx) => (dx.catalogo || "CIE-10") === catalogo);
-
-    if (diagnosticos.length === 0) return;
-
-    contenedor.innerHTML += `<h4 class="diagnostico-catalogo-titulo">${catalogo}</h4>`;
-
-    diagnosticos.forEach((dx) => {
-      contenedor.innerHTML += `
-        <article class="diagnostico-item diagnostico-editable-nota">
-          <div class="diagnostico-editable-header">
-            <strong>${escaparHTML(dx.catalogo || "CIE-10")} ${escaparHTML(dx.codigo || "")}</strong>
-            <button type="button" onclick="eliminarDiagnostico(${dx.index})">
-              Eliminar diagnostico
-            </button>
-          </div>
-
-          <div class="diagnostico-editable-grid">
-            <label>Catalogo
-              <select data-dx-index="${dx.index}" data-dx-campo="catalogo" onchange="actualizarDiagnosticoSeleccionado(this)">
-                <option value="CIE-10" ${(dx.catalogo || "CIE-10") === "CIE-10" ? "selected" : ""}>CIE-10</option>
-                <option value="CIE-11" ${(dx.catalogo || "CIE-10") === "CIE-11" ? "selected" : ""}>CIE-11</option>
-                <option value="Manual" ${(dx.catalogo || "CIE-10") === "Manual" ? "selected" : ""}>Manual</option>
-              </select>
-            </label>
-            <label>Codigo
-              <input value="${escaparHTML(dx.codigo || "")}" data-dx-index="${dx.index}" data-dx-campo="codigo" oninput="actualizarDiagnosticoSeleccionado(this)">
-            </label>
-            <label>Nombre
-              <input value="${escaparHTML(dx.nombre || "")}" data-dx-index="${dx.index}" data-dx-campo="nombre" oninput="actualizarDiagnosticoSeleccionado(this)">
-            </label>
-          </div>
-
-          <label>Texto visible y exportable
-            <textarea data-dx-index="${dx.index}" data-dx-campo="texto" oninput="actualizarDiagnosticoSeleccionado(this)">${escaparHTML(dx.texto || "")}</textarea>
-          </label>
-        </article>
-      `;
-    });
-  });
+  contenedor.innerHTML += `
+    <div class="diagnosticos-editables-tabla">
+      <div class="diagnosticos-editables-head">
+        <span>Codigo</span>
+        <span>Diagnostico</span>
+        <span>Catalogo</span>
+        <span></span>
+      </div>
+      ${diagnosticosSeleccionados.map((dx, index) => `
+        <div class="diagnosticos-editables-row">
+          <input
+            value="${escaparHTML(dx.codigo || "")}"
+            data-dx-index="${index}"
+            data-dx-campo="codigo"
+            oninput="actualizarDiagnosticoSeleccionado(this)"
+            placeholder="Codigo"
+          >
+          <input
+            value="${escaparHTML(dx.nombre || dx.texto || "")}"
+            data-dx-index="${index}"
+            data-dx-campo="nombre"
+            oninput="actualizarDiagnosticoSeleccionado(this)"
+            placeholder="Nombre del diagnostico"
+          >
+          <select data-dx-index="${index}" data-dx-campo="catalogo" onchange="actualizarDiagnosticoSeleccionado(this)">
+            <option value="CIE-10" ${(dx.catalogo || "CIE-10") === "CIE-10" ? "selected" : ""}>CIE-10</option>
+            <option value="CIE-11" ${(dx.catalogo || "CIE-10") === "CIE-11" ? "selected" : ""}>CIE-11</option>
+            <option value="Manual" ${(dx.catalogo || "CIE-10") === "Manual" ? "selected" : ""}>Manual</option>
+          </select>
+          <button type="button" onclick="eliminarDiagnostico(${index})">
+            Eliminar
+          </button>
+        </div>
+      `).join("")}
+    </div>
+  `;
 }
 
 renderizarDiagnosticosSeleccionados = renderizarDiagnosticosSeleccionadosEditable;
@@ -429,6 +423,11 @@ window.actualizarDiagnosticoSeleccionado = function(campo) {
     editadoManual: true,
     fechaEdicionManual: new Date().toISOString()
   };
+
+  if (nombreCampo === "codigo" || nombreCampo === "nombre") {
+    const dx = diagnosticosSeleccionados[index];
+    diagnosticosSeleccionados[index].texto = `${dx.codigo || ""}${dx.codigo && dx.nombre ? " - " : ""}${dx.nombre || ""}`.trim();
+  }
 
   sincronizarDiagnosticosObservacion();
 };
@@ -931,6 +930,7 @@ async function cargarNotasFlotantesParaNota() {
   if (!uidPaciente) {
     contenedor.textContent = "Selecciona un paciente para cargar sus notas flotantes.";
     notasFlotantesPacienteCache = [];
+    renderizarNotasFlotantesCostado();
     return;
   }
 
@@ -942,6 +942,7 @@ async function cargarNotasFlotantesParaNota() {
   }));
 
   renderizarNotasFlotantesEnNota();
+  renderizarNotasFlotantesCostado();
 }
 
 function renderizarNotasFlotantesEnNota() {
@@ -963,11 +964,67 @@ function renderizarNotasFlotantesEnNota() {
           <button type="button" class="boton-secundario" onclick="seleccionarNotaFlotanteDesdeNota('${nota.id}')">
             Editar
           </button>
+          <button type="button" class="boton-secundario" onclick="alternarNotaFlotanteDesdeNota('${nota.id}')">
+            ${nota.contraida ? "Mostrar" : "Contraer"}
+          </button>
         </div>
       </details>
     `;
   }).join("");
 }
+
+function renderizarNotasFlotantesCostado() {
+  const costado = document.getElementById("notasFlotantesCostado");
+  if (!costado) return;
+
+  const visibles = notasFlotantesPacienteCache.filter((nota) => nota.texto || nota.titulo);
+
+  if (!visibles.length) {
+    costado.innerHTML = "";
+    costado.classList.remove("con-notas");
+    return;
+  }
+
+  costado.classList.add("con-notas");
+  costado.innerHTML = visibles.map((nota) => `
+    <article class="nota-flotante-costado ${nota.contraida ? "contraida" : "abierta"}">
+      <button type="button" class="nota-flotante-costado-header" onclick="alternarNotaFlotanteDesdeNota('${nota.id}')">
+        <span>${escaparHTML(nota.titulo || "Nota flotante")}</span>
+        <small>${nota.contraida ? "Mostrar" : "Contraer"}</small>
+      </button>
+      <div class="nota-flotante-costado-cuerpo">
+        <p>${escaparHTML(nota.texto || "").replace(/\n/g, "<br>")}</p>
+        <button type="button" class="boton-secundario" onclick="abrirNotasFlotantesPaciente(); seleccionarNotaFlotanteDesdeNota('${nota.id}')">
+          Editar
+        </button>
+      </div>
+    </article>
+  `).join("");
+}
+
+window.alternarNotaFlotanteDesdeNota = async function(id) {
+  const uidPaciente = uidPacienteParaNotaFlotante();
+  const nota = notasFlotantesPacienteCache.find((item) => item.id === id);
+
+  if (!uidPaciente || !nota) return;
+
+  const contraida = !nota.contraida;
+  nota.contraida = contraida;
+
+  await updateDoc(doc(db, "usuarios", uidPaciente, "notasFlotantes", id), {
+    contraida,
+    fechaActualizacion: new Date().toISOString()
+  });
+
+  const idActivo = document.getElementById("notaFlotanteNotaId")?.value;
+  if (idActivo === id) {
+    const selector = document.getElementById("notaFlotanteNotaContraida");
+    if (selector) selector.value = contraida ? "true" : "false";
+  }
+
+  renderizarNotasFlotantesEnNota();
+  renderizarNotasFlotantesCostado();
+};
 
 function uidPacienteParaNotaFlotante() {
   return uidPacienteActual || document.getElementById("uidPaciente")?.value || "";
