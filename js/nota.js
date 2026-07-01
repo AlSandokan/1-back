@@ -62,10 +62,35 @@ const buscadorCIE11 = document.getElementById("buscadorCIE11");
 const resultadosCIE10Lista = document.getElementById("resultadosCIE10Lista");
 const resultadosCIE11Lista = document.getElementById("resultadosCIE11Lista");
 const diagnosticoCatalogoVisible = document.getElementById("diagnosticoCatalogoVisible");
-const catalogoDiagnosticos = [
-  ...CIE10.map((dx) => ({ ...dx, catalogo: "CIE-10" })),
-  ...CIE11.map((dx) => ({ ...dx, catalogo: "CIE-11" }))
-];
+const CLAVE_CATALOGO_MANUAL = "cognicion_catalogo_diagnosticos_manual";
+let catalogoManualDiagnosticos = cargarCatalogoManualDiagnosticos();
+
+function cargarCatalogoManualDiagnosticos() {
+  try {
+    const guardado = localStorage.getItem(CLAVE_CATALOGO_MANUAL);
+    const datos = guardado ? JSON.parse(guardado) : [];
+    return Array.isArray(datos) ? datos : [];
+  } catch (error) {
+    console.warn("No se pudo cargar el catalogo manual de diagnosticos", error);
+    return [];
+  }
+}
+
+function guardarCatalogoManualDiagnosticos() {
+  localStorage.setItem(CLAVE_CATALOGO_MANUAL, JSON.stringify(catalogoManualDiagnosticos));
+}
+
+function catalogoManualPorTipo(nombreCatalogo) {
+  return catalogoManualDiagnosticos.filter((dx) => dx.catalogo === nombreCatalogo);
+}
+
+function catalogoDiagnosticosCombinado() {
+  return [
+    ...CIE10.map((dx) => ({ ...dx, catalogo: "CIE-10" })),
+    ...CIE11.map((dx) => ({ ...dx, catalogo: "CIE-11" })),
+    ...catalogoManualDiagnosticos
+  ];
+}
 
 function configurarBuscadorCatalogo(input, contenedor, catalogo, nombreCatalogo) {
   if (!input || !contenedor) return;
@@ -76,7 +101,7 @@ function configurarBuscadorCatalogo(input, contenedor, catalogo, nombreCatalogo)
 
     if (texto.length < 2) return;
 
-    catalogo
+    [...catalogo, ...catalogoManualPorTipo(nombreCatalogo)]
       .filter((dx) =>
         dx.codigo.toLowerCase().includes(texto) ||
         dx.nombre.toLowerCase().includes(texto)
@@ -107,7 +132,7 @@ if (buscadorDiagnostico && resultadosCIE10 && cie10Codigo && cie10Nombre) {
 
     if (texto.length < 2) return;
 
-    const resultados = catalogoDiagnosticos.filter((dx) => {
+    const resultados = catalogoDiagnosticosCombinado().filter((dx) => {
       return (
         dx.codigo.toLowerCase().includes(texto) ||
         dx.nombre.toLowerCase().includes(texto)
@@ -377,6 +402,7 @@ function renderizarDiagnosticosSeleccionadosEditable() {
         <span>Codigo</span>
         <span>Diagnostico</span>
         <span>Catalogo</span>
+        <span>Catalogo local</span>
         <span></span>
       </div>
       ${diagnosticosSeleccionados.map((dx, index) => `
@@ -400,6 +426,9 @@ function renderizarDiagnosticosSeleccionadosEditable() {
             <option value="CIE-11" ${(dx.catalogo || "CIE-10") === "CIE-11" ? "selected" : ""}>CIE-11</option>
             <option value="Manual" ${(dx.catalogo || "CIE-10") === "Manual" ? "selected" : ""}>Manual</option>
           </select>
+          <button type="button" class="boton-catalogo-manual" onclick="incluirDiagnosticoManualEnCatalogo(${index})">
+            Incluir
+          </button>
           <button type="button" onclick="eliminarDiagnostico(${index})">
             Eliminar
           </button>
@@ -442,6 +471,57 @@ window.agregarDiagnosticoManualNota = function() {
     fechaSeleccion: new Date().toISOString()
   });
 
+  renderizarDiagnosticosSeleccionados();
+};
+
+window.incluirDiagnosticoManualEnCatalogo = function(index) {
+  const dx = diagnosticosSeleccionados[index];
+  if (!dx) return;
+
+  const catalogo = dx.catalogo || "Manual";
+  const codigo = (dx.codigo || "").trim();
+  const nombre = (dx.nombre || dx.texto || "").trim();
+
+  if (!codigo || !nombre) {
+    alert("Escribe codigo y nombre antes de incluir el diagnostico en un catalogo.");
+    return;
+  }
+
+  if (!["CIE-10", "CIE-11"].includes(catalogo)) {
+    alert("Elige CIE-10 o CIE-11 en la columna Catalogo antes de incluirlo.");
+    return;
+  }
+
+  const existeEnBase = catalogoDiagnosticosCombinado().some((item) =>
+    item.codigo.toLowerCase() === codigo.toLowerCase() &&
+    (item.catalogo || "CIE-10") === catalogo
+  );
+
+  if (existeEnBase) {
+    alert("Ese codigo ya existe en el catalogo seleccionado.");
+    return;
+  }
+
+  catalogoManualDiagnosticos.push({
+    codigo,
+    nombre,
+    catalogo,
+    texto: `${codigo} - ${nombre}`,
+    agregadoManual: true,
+    fechaAgregado: new Date().toISOString()
+  });
+  guardarCatalogoManualDiagnosticos();
+
+  diagnosticosSeleccionados[index] = {
+    ...dx,
+    codigo,
+    nombre,
+    catalogo,
+    texto: `${codigo} - ${nombre}`,
+    incluidoEnCatalogo: true
+  };
+
+  alert(`Diagnostico incluido en ${catalogo}.`);
   renderizarDiagnosticosSeleccionados();
 };
 
@@ -1886,20 +1966,20 @@ async function htmlWordFrayObservacion() {
         .identificacion b { font-weight: 700; }
         table { width: 100%; border-collapse: collapse; margin: 3pt 0 8pt; }
         th, td { border: 1px solid #222; padding: 4pt; vertical-align: top; text-align: left; }
-        .tabla-vitales { width: auto; table-layout: auto; margin: 3pt 0 8pt; }
+        .tabla-vitales { width: auto; table-layout: auto; margin: 2pt 0 6pt; }
         .tabla-vitales th,
         .tabla-vitales td {
           text-align: center;
           white-space: nowrap;
-          padding: 2pt 5pt;
+          padding: 1.4pt 3.2pt;
           margin: 0;
           mso-margin-top-alt: 0cm;
           mso-margin-bottom-alt: 0cm;
           line-height: 1.0;
           mso-line-height-rule: exactly;
         }
-        .tabla-vitales th { font-size: 7.2pt; font-weight: 700; }
-        .tabla-vitales td { font-size: 8pt; }
+        .tabla-vitales th { font-size: 6.6pt; font-weight: 700; }
+        .tabla-vitales td { font-size: 7.4pt; }
         .tabla-vitales th p,
         .tabla-vitales td p {
           margin: 0;

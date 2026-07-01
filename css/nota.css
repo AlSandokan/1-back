@@ -700,16 +700,31 @@ button:hover{
     padding: 16px;
 }
 
+.grid-vitales {
+    grid-template-columns: repeat(4, minmax(110px, 1fr));
+    gap: 8px;
+    padding: 10px 12px 12px;
+}
+
 .grid-observacion label,
 .grid-vitales label {
     margin: 0;
 }
 
 .campo-vital {
-    padding: 12px;
-    border-radius: 16px;
+    padding: 8px 9px;
+    border-radius: 12px;
     border: 1px solid rgba(56,189,248,0.16);
     background: rgba(15,23,42,0.42);
+    font-size: 12px;
+}
+
+.campo-vital input {
+    margin-top: 6px;
+    margin-bottom: 0;
+    padding: 8px 9px;
+    border-radius: 10px;
+    font-size: 13px;
 }
 
 .tabla-diagnosticos {
@@ -956,7 +971,7 @@ button:hover{
 .diagnosticos-editables-head,
 .diagnosticos-editables-row {
   display: grid;
-  grid-template-columns: minmax(110px, 0.45fr) minmax(260px, 1.4fr) minmax(120px, 0.45fr) auto;
+  grid-template-columns: minmax(110px, 0.45fr) minmax(260px, 1.4fr) minmax(120px, 0.45fr) minmax(110px, auto) auto;
   gap: 10px;
   align-items: center;
   padding: 12px 14px;
@@ -988,6 +1003,12 @@ button:hover{
 .diagnosticos-editables-row button {
   margin: 0;
   white-space: nowrap;
+}
+
+.boton-catalogo-manual {
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(125, 211, 252, 0.34);
+  color: #7dd3fc;
 }
 
 @media (max-width: 800px) {

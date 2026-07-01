@@ -67,8 +67,37 @@ let estudiosCache = [];
 let escalasAsignadasCache = new Map();
 let diagnosticosCatalogoActual = [];
 let diagnosticoReemplazoIndex = null;
+const CLAVE_CATALOGO_MANUAL = "cognicion_catalogo_diagnosticos_manual";
+let catalogoManualDiagnosticos = cargarCatalogoManualDiagnosticos();
 
 iniciarMonitoreoSesion("Expediente paciente");
+
+function cargarCatalogoManualDiagnosticos() {
+  try {
+    const guardado = localStorage.getItem(CLAVE_CATALOGO_MANUAL);
+    const datos = guardado ? JSON.parse(guardado) : [];
+    return Array.isArray(datos) ? datos : [];
+  } catch (error) {
+    console.warn("No se pudo cargar el catalogo manual de diagnosticos", error);
+    return [];
+  }
+}
+
+function guardarCatalogoManualDiagnosticos() {
+  localStorage.setItem(CLAVE_CATALOGO_MANUAL, JSON.stringify(catalogoManualDiagnosticos));
+}
+
+function catalogoManualPorTipo(nombreCatalogo) {
+  return catalogoManualDiagnosticos.filter((dx) => dx.catalogo === nombreCatalogo);
+}
+
+function catalogoDiagnosticosCombinado() {
+  return [
+    ...CIE10.map((dx) => ({ ...dx, catalogo: "CIE-10" })),
+    ...CIE11.map((dx) => ({ ...dx, catalogo: "CIE-11" })),
+    ...catalogoManualDiagnosticos
+  ];
+}
 
 function formatearDiagnostico(diagnostico) {
   if (!diagnostico) return "Sin diagnostico";
@@ -340,7 +369,8 @@ function obtenerHistorialDiagnosticos(datos = datosPacienteActual || {}) {
 
 function obtenerCatalogoDiagnostico() {
   const catalogo = document.getElementById("diagnosticoCatalogo")?.value || "CIE-10";
-  return catalogo === "CIE-11" ? CIE11 : CIE10;
+  const base = catalogo === "CIE-11" ? CIE11 : CIE10;
+  return [...base, ...catalogoManualPorTipo(catalogo)];
 }
 
 function renderizarResultadosBusquedaDiagnosticos() {
@@ -1314,6 +1344,7 @@ async function agregarDiagnosticoManualPaciente() {
   const codigo = valorCampo("diagnosticoManualCodigo");
   const nombre = valorCampo("diagnosticoManualNombre");
   const texto = valorCampo("diagnosticoManualTexto") || nombre;
+  const incluirEnCatalogo = document.getElementById("diagnosticoManualIncluirCatalogo")?.checked || false;
 
   if (!codigo && !texto) {
     alert("Escribe al menos un codigo o un texto diagnostico.");
@@ -1327,6 +1358,35 @@ async function agregarDiagnosticoManualPaciente() {
     texto: texto || nombre || codigo,
     manual: true
   }, catalogo);
+
+  if (incluirEnCatalogo) {
+    if (!["CIE-10", "CIE-11"].includes(catalogo)) {
+      alert("Para incluirlo en catalogo, elige CIE-10 o CIE-11.");
+      return;
+    }
+
+    if (!codigo || !(nombre || texto)) {
+      alert("Para incluirlo en catalogo, escribe codigo y nombre diagnostico.");
+      return;
+    }
+
+    const existe = catalogoDiagnosticosCombinado().some((dx) =>
+      dx.codigo.toLowerCase() === codigo.toLowerCase() &&
+      (dx.catalogo || "CIE-10") === catalogo
+    );
+
+    if (!existe) {
+      catalogoManualDiagnosticos.push({
+        codigo,
+        nombre: nombre || texto,
+        catalogo,
+        texto: `${codigo} - ${nombre || texto}`,
+        agregadoManual: true,
+        fechaAgregado: new Date().toISOString()
+      });
+      guardarCatalogoManualDiagnosticos();
+    }
+  }
 
   const historial = obtenerHistorialDiagnosticos();
   const nuevoHistorial = [...historial, diagnostico];
@@ -1344,6 +1404,8 @@ async function agregarDiagnosticoManualPaciente() {
   });
 
   ["diagnosticoManualCodigo", "diagnosticoManualNombre", "diagnosticoManualTexto"].forEach((id) => ponerValor(id, ""));
+  const incluirCatalogo = document.getElementById("diagnosticoManualIncluirCatalogo");
+  if (incluirCatalogo) incluirCatalogo.checked = false;
   await cargarDatosPaciente();
 }
 

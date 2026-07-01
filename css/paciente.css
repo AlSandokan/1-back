@@ -257,6 +257,16 @@ button:hover{
     line-height:1.4;
 }
 
+.consultas-en-linea {
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:20px;
+}
+
+.consultas-en-linea > div {
+    min-width:0;
+}
+
 input,
 select,
 textarea{
@@ -674,9 +684,27 @@ textarea{
   padding: 0 16px 16px;
 }
 
+.opcion-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: auto;
+  margin: 8px 0 14px;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.opcion-inline input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  accent-color: #38bdf8;
+}
+
 @media(max-width:900px){
   .form-grid,
-  .panel-doble{
+  .panel-doble,
+  .consultas-en-linea{
     grid-template-columns:1fr;
   }
 

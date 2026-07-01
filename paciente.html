@@ -96,14 +96,15 @@
             <div id="medicoTratante">Cargando...</div>
           </div>
 
-          <div class="dato">
-            <label>Ultima consulta <button class="boton-editar-dato" onclick="editarCampoPaciente('ultimaConsulta', 'Ultima consulta', 'date')">Editar</button></label>
-            <div id="ultimaConsulta">Cargando...</div>
-          </div>
-
-          <div class="dato-card">
-            <span>Proxima consulta <button class="boton-editar-dato" onclick="editarCampoPaciente('proximaConsulta', 'Proxima consulta', 'date')">Editar</button></span>
-            <strong id="proximaConsulta">Sin programar</strong>
+          <div class="dato consultas-en-linea">
+            <div>
+              <label>Ultima consulta <button class="boton-editar-dato" onclick="editarCampoPaciente('ultimaConsulta', 'Ultima consulta', 'date')">Editar</button></label>
+              <div id="ultimaConsulta">Cargando...</div>
+            </div>
+            <div>
+              <label>Proxima consulta <button class="boton-editar-dato" onclick="editarCampoPaciente('proximaConsulta', 'Proxima consulta', 'date')">Editar</button></label>
+              <div id="proximaConsulta">Sin programar</div>
+            </div>
           </div>
 
           <div class="dato">
@@ -330,6 +331,10 @@
         </div>
         <label>Texto visible
           <textarea id="diagnosticoManualTexto" placeholder="Texto diagnostico completo o especificador clinico."></textarea>
+        </label>
+        <label class="opcion-inline">
+          <input id="diagnosticoManualIncluirCatalogo" type="checkbox">
+          Incluir este diagnostico en el catalogo seleccionado
         </label>
         <div class="form-actions">
           <button id="agregarDiagnosticoManual" type="button">Agregar diagnostico manual</button>
