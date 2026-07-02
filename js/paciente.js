@@ -448,6 +448,7 @@ function ocultarSecciones() {
     "seccionCarpetas",
     "seccionNotasFlotantes",
     "seccionInterconsulta",
+    "seccionIndicaciones",
     "seccionEstudios",
     "seccionNotasRapidas"
   ].forEach((id) => {
@@ -823,6 +824,13 @@ window.mostrarInterconsulta = async function() {
   document.getElementById("seccionInterconsulta").style.display = "block";
   autollenarInterconsulta();
   await cargarInterconsultasPaciente();
+};
+
+window.mostrarIndicaciones = async function() {
+  ocultarSecciones();
+  document.getElementById("seccionIndicaciones").style.display = "block";
+  autollenarIndicaciones();
+  await cargarIndicacionesPaciente();
 };
 
 window.mostrarEstudios = async function() {
@@ -1945,109 +1953,372 @@ function formatoFechaInterconsulta(fecha = "") {
   return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
-async function htmlInterconsultaWord(datos) {
-  const logoSalud = datos.formato === "fray"
-    ? await recursoDataUriPaciente("assets/fray-observacion-salud-conasama-stack.png")
-    : "";
-  const logoFray = datos.formato === "fray"
-    ? await recursoDataUriPaciente("assets/fray-observacion-image2.png")
-    : "";
+function textoWordPaciente(valor) {
+  return escaparHTML(valor || "");
+}
 
-  const encabezadoFray = `
-    <table class="encabezado-fray">
+function textoMultilineaWordPaciente(valor) {
+  return textoWordPaciente(valor).replace(/\n/g, "<br>");
+}
+
+function datosIdentificacionInstitucionalPaciente(paciente = {}) {
+  const datosInst = paciente.datosInstitucionales || {};
+  const fechaNacimiento = obtenerFechaNacimiento(paciente);
+  const edad = calcularEdad(fechaNacimiento);
+
+  return {
+    nombrePaciente: paciente.nombre || datosInst.nombrePaciente || "",
+    fechaNacimiento,
+    edad: edad !== "" ? `${edad}` : "",
+    cama: paciente.cama || datosInst.cama || "",
+    expediente: paciente.expediente || paciente.numeroExpediente || datosInst.expediente || "",
+    sexo: paciente.sexo || datosInst.sexo || "",
+    genero: paciente.genero || paciente.identidadGenero || datosInst.genero || "",
+    servicio: paciente.servicioInstitucional || paciente.servicio || datosInst.servicioInstitucional || "Observacion",
+    alergias: paciente.alergias || datosInst.alergias || "",
+    curp: paciente.curp || datosInst.curp || "",
+    peso: paciente.peso || paciente.signosVitales?.peso || datosInst.peso || "",
+    talla: paciente.talla || paciente.signosVitales?.talla || datosInst.talla || "",
+    perimetroAbdominal: paciente.perimetroAbdominal || paciente.signosVitales?.perimetroAbdominal || datosInst.perimetroAbdominal || "",
+    diagnostico: formatearDiagnostico(paciente.datosClinicosResumen?.diagnostico || paciente.diagnostico)
+  };
+}
+
+async function encabezadoFrayPacienteHTML() {
+  const logoSalud = await recursoDataUriPaciente("assets/fray-observacion-salud-conasama-stack.png");
+  const logoFray = await recursoDataUriPaciente("assets/fray-observacion-image2.png");
+
+  return `
+    <table class="encabezado">
       <tr>
-        <td class="encabezado-logo-izq"><img src="${logoSalud}" class="logo-salud"></td>
-        <td class="encabezado-centro">
-          SECRETARÍA DE SALUD<br>
-          COMISIÓN NACIONAL DE SALUD MENTAL Y ADICCIONES<br>
-          HOSPITAL PSIQUIÁTRICO "FRAY BERNARDINO ÁLVAREZ"
+        <td class="encabezado-logo-izq">
+          <img
+            class="logo-salud"
+            src="${logoSalud}"
+            style="width:2.8cm;height:auto;"
+            width="106"
+          >
         </td>
-        <td class="encabezado-logo-der"><img src="${logoFray}" class="logo-fray"></td>
+        <td class="encabezado-centro">
+          SECRETARIA DE SALUD<br>
+          COMISION NACIONAL DE SALUD MENTAL Y ADICCIONES<br>
+          HOSPITAL PSIQUIATRICO "FRAY BERNARDINO ALVAREZ"
+        </td>
+        <td class="encabezado-logo-der"><img class="logo-fray" src="${logoFray}"></td>
       </tr>
     </table>
-    <div class="linea-encabezado"></div>
   `;
+}
 
-  const encabezadoCognicion = `<h1>Cognicion · Solicitud de interconsulta</h1>`;
+function estilosFrayPacienteHTML() {
+  return `
+    @page WordSection1 {
+      size: 21.59cm 27.94cm;
+      margin: 36.0pt 36.0pt 36.0pt 36.0pt;
+    }
+
+    div.WordSection1 {
+      page: WordSection1;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 9pt;
+      color: #111;
+      margin: 0;
+      padding: 0;
+    }
+
+    .encabezado { width: 100%; table-layout: fixed; border-collapse: collapse; margin: 0 0 8pt; border-bottom: 1px dashed #777; }
+    .encabezado td { border: none; vertical-align: middle; padding: 0 0 4pt; }
+    .encabezado-logo-izq { width: 20%; text-align: left; }
+    .encabezado-centro { width: 62%; text-align: center; font-weight: 700; font-size: 11pt; line-height: 1.12; text-transform: uppercase; white-space: nowrap; }
+    .encabezado-logo-der { width: 14%; text-align: right; }
+    .logo-salud { width: 118px; }
+    .logo-fray { width: 58px; }
+    h1 { text-align: center; font-size: 11.5pt; color: #7b7b7b; margin: 8pt 0 12pt; text-transform: uppercase; letter-spacing: .2pt; }
+    h2 { font-size: 9.5pt; margin: 10pt 0 3pt; text-align: left; text-transform: uppercase; }
+    p { margin: 0; mso-margin-top-alt: 0cm; mso-margin-bottom-alt: 0cm; line-height: 1.0; mso-line-height-rule: exactly; text-align: left; }
+    .identificacion { font-size: 8.6pt; line-height: 1.35; margin: 2pt 0 7pt; }
+    .identificacion b { font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; margin: 3pt 0 8pt; }
+    th, td { border: 1px solid #333; padding: 4pt 5pt; vertical-align: top; font-size: 8.8pt; }
+    th { text-align: center; font-weight: 700; }
+    .sin-borde td { border: none; }
+    .contenido-largo { min-height: 110pt; line-height: 1.08; }
+    .firma-tabla td { width: 33.33%; height: 46pt; text-align: center; vertical-align: bottom; border: none; font-size: 8.5pt; }
+  `;
+}
+
+function bloqueIdentificacionFrayPaciente(datos = {}) {
+  return `
+    <p class="identificacion">
+      <b>Nombre del paciente:</b> ${textoWordPaciente(datos.nombrePaciente)}
+      &nbsp;&nbsp; <b>Fecha de nacimiento:</b> ${textoWordPaciente(formatoFechaInterconsulta(datos.fechaNacimiento))}
+      &nbsp;&nbsp; <b>Edad:</b> ${textoWordPaciente(datos.edad)} ANOS
+      &nbsp;&nbsp; <b>Cama:</b> ${textoWordPaciente(datos.cama)}
+      &nbsp;&nbsp; <b>Expediente:</b> ${textoWordPaciente(datos.expediente)}
+      &nbsp;&nbsp; <b>Sexo:</b> ${textoWordPaciente(datos.sexo)}
+      &nbsp;&nbsp; <b>Genero:</b> ${textoWordPaciente(datos.genero)}
+      &nbsp;&nbsp; <b>Servicio:</b> ${textoWordPaciente(datos.servicio)}
+      &nbsp;&nbsp; <b>Alergias:</b> ${textoWordPaciente(datos.alergias)}
+    </p>
+  `;
+}
+
+function firmasFrayPacienteHTML(firmas = []) {
+  const campos = [0, 1, 2].map((indice) => {
+    const firma = firmas[indice] || {};
+    return `
+      <td>
+        ${textoWordPaciente(firma.nombre)}<br>
+        ${textoWordPaciente(firma.cargo)}<br>
+        ${firma.cedula ? `Ced. Prof. ${textoWordPaciente(firma.cedula)}` : ""}
+      </td>
+    `;
+  }).join("");
+
+  return `<table class="firma-tabla"><tr>${campos}</tr></table>`;
+}
+
+async function htmlInterconsultaWord(datos) {
+  const encabezadoFray = datos.formato === "fray" ? await encabezadoFrayPacienteHTML() : "";
+  const encabezadoCognicion = `<h1>Cognicion - Solicitud de interconsulta</h1>`;
   const motivoCompleto = [
     datos.motivo,
     datos.resumen ? `Resumen clinico: ${datos.resumen}` : "",
     datos.pregunta ? `Pregunta clinica: ${datos.pregunta}` : ""
   ].filter(Boolean).join("\n\n");
+  const identificacion = bloqueIdentificacionFrayPaciente({
+    nombrePaciente: datos.pacienteNombre,
+    fechaNacimiento: datos.fechaNacimiento,
+    edad: datos.edad,
+    cama: datos.cama,
+    expediente: datos.expediente,
+    sexo: datos.sexo,
+    genero: datos.genero,
+    alergias: datos.alergias,
+    servicio: datos.servicioSolicitante || datos.servicio
+  });
 
   return `
     <html>
       <head>
         <meta charset="UTF-8">
         <style>
-          @page WordSection1 { size: 21.59cm 27.94cm; margin: 2.5cm 3cm 1.25cm 3cm; }
-          div.WordSection1 { page: WordSection1; }
-          body { font-family: Arial, sans-serif; font-size: 10pt; color: #111; }
-          .encabezado-fray { width: 100%; border-collapse: collapse; margin: 0 0 2pt; }
-          .encabezado-fray td { border: none; vertical-align: middle; }
-          .encabezado-logo-izq { width: 30%; text-align: left; }
-          .encabezado-centro { width: 40%; text-align: center; font-size: 10pt; font-weight: bold; line-height: 1.05; }
-          .encabezado-logo-der { width: 30%; text-align: right; }
-          .logo-salud { width: 118px; }
-          .logo-fray { width: 58px; }
-          .linea-encabezado { border-top: 1px dashed #777; height: 1px; margin: 2pt 0 9pt; }
-          h1 { text-align:center; font-size: 12pt; margin: 0; text-transform: uppercase; font-weight: bold; }
-          .subtitulo { text-align:center; margin: 2pt 0 14pt; font-weight: bold; }
-          p { margin: 0 0 7pt; line-height: 1.12; text-align: left; }
-          .datos { margin-top: 10pt; }
-          .datos p { margin-bottom: 6pt; }
-          .label { font-weight: bold; }
-          .motivo-titulo { margin-top: 16pt; margin-bottom: 7pt; font-weight: bold; }
-          .motivo { min-height: 115pt; text-align: justify; line-height: 1.18; }
-          .firmas { margin-top: 20pt; }
-          .firmas p { margin-bottom: 13pt; }
+          ${estilosFrayPacienteHTML()}
         </style>
       </head>
       <body>
         <div class="WordSection1">
           ${datos.formato === "fray" ? encabezadoFray : encabezadoCognicion}
           <h1>SOLICITUD DE INTERCONSULTA</h1>
-          <p class="subtitulo">(ATENCIÓN INTRAHOSPITALARIA)</p>
-
-          <div class="datos">
-            <p><span class="label">Fecha:</span> ${escaparHTML(formatoFechaInterconsulta(datos.fecha))}
-              &nbsp;&nbsp;&nbsp;&nbsp; <span class="label">Hora:</span> ${escaparHTML(datos.hora)}
-              &nbsp;&nbsp;&nbsp;&nbsp; <span class="label">No. de expediente:</span> ${escaparHTML(datos.expediente)}</p>
-            <p><span class="label">Nombre completo del paciente:</span> ${escaparHTML(datos.pacienteNombre)}</p>
-            <p><span class="label">Fecha de nacimiento:</span> ${escaparHTML(formatoFechaInterconsulta(datos.fechaNacimiento))}
-              &nbsp;&nbsp;&nbsp;&nbsp; <span class="label">CURP:</span> ${escaparHTML(datos.curp)}</p>
-            <p><span class="label">Edad:</span> ${escaparHTML(datos.edad)} años
-              &nbsp;&nbsp;&nbsp;&nbsp; <span class="label">Sexo:</span> ${escaparHTML(datos.sexo)}
-              &nbsp;&nbsp;&nbsp;&nbsp; <span class="label">Genero:</span> ${escaparHTML(datos.genero)}</p>
-            <p><span class="label">No. de cama:</span> ${escaparHTML(datos.cama)}
-              &nbsp;&nbsp;&nbsp;&nbsp; <span class="label">Alergia:</span> ${escaparHTML(datos.alergias)}
-              &nbsp;&nbsp;&nbsp;&nbsp; <span class="label">Peso:</span> ${escaparHTML(datos.peso)} Kg
-              &nbsp;&nbsp;&nbsp;&nbsp; <span class="label">Talla:</span> ${escaparHTML(datos.talla)} m
-              &nbsp;&nbsp;&nbsp;&nbsp; <span class="label">Perímetro abdominal:</span> ${escaparHTML(datos.perimetroAbdominal)} cm</p>
-            <p>&nbsp;</p>
-            <p><span class="label">Servicio solicitante:</span> ${escaparHTML(datos.servicioSolicitante)}
-              &nbsp;&nbsp;&nbsp;&nbsp; <span class="label">Servicio interconsultante:</span> ${escaparHTML(datos.servicio)}</p>
-            <p>&nbsp;</p>
-            <p><span class="label">Sospecha diagnóstica:</span> ${escaparHTML(datos.diagnostico)}</p>
-          </div>
-
-          <p class="motivo-titulo">Motivo de la interconsulta:</p>
-          <p class="motivo">${escaparHTML(motivoCompleto).replace(/\n/g, "<br>")}</p>
-
-          <div class="firmas">
-            <p><span class="label">Médico solicitante:</span> ${escaparHTML(datos.medicoSolicitante)}
-              &nbsp;&nbsp;&nbsp; <span class="label">Cédula profesional:</span> ${escaparHTML(datos.cedulaSolicitante)}
-              &nbsp;&nbsp;&nbsp; <span class="label">Firma:</span> _____________</p>
-            <p><span class="label">Médico interconsultante:</span> _____________________________________________________________</p>
-            <p><span class="label">Cédula profesional:</span> _________________
-              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="label">Firma:</span> _______________</p>
-            <p>&nbsp;</p>
-            <p><span class="label">Recibe la interconsulta:</span> _______________________________________________________________</p>
-          </div>
+          ${identificacion}
+          <p><b>Fecha:</b> ${textoWordPaciente(formatoFechaInterconsulta(datos.fecha))} &nbsp;&nbsp; <b>Hora:</b> ${textoWordPaciente(datos.hora)} &nbsp;&nbsp; <b>CURP:</b> ${textoWordPaciente(datos.curp)}</p>
+          <p><b>Servicio solicitante:</b> ${textoWordPaciente(datos.servicioSolicitante)} &nbsp;&nbsp; <b>Servicio interconsultante:</b> ${textoWordPaciente(datos.servicio)} &nbsp;&nbsp; <b>Prioridad:</b> ${textoWordPaciente(datos.prioridad)}</p>
+          <p><b>Peso:</b> ${textoWordPaciente(datos.peso)} Kg &nbsp;&nbsp; <b>Talla:</b> ${textoWordPaciente(datos.talla)} m &nbsp;&nbsp; <b>Perimetro abdominal:</b> ${textoWordPaciente(datos.perimetroAbdominal)} cm</p>
+          <h2>Sospecha diagnostica</h2>
+          <p>${textoWordPaciente(datos.diagnostico)}</p>
+          <h2>Motivo de la interconsulta</h2>
+          <p class="contenido-largo">${textoMultilineaWordPaciente(motivoCompleto)}</p>
+          <table class="sin-borde">
+            <tr>
+              <td><b>Medico solicitante:</b> ${textoWordPaciente(datos.medicoSolicitante)}<br><b>Cedula profesional:</b> ${textoWordPaciente(datos.cedulaSolicitante)}</td>
+              <td><b>Medico interconsultante:</b><br>______________________________________<br><b>Cedula profesional:</b> __________________</td>
+            </tr>
+          </table>
         </div>
       </body>
     </html>
   `;
+}
+
+function datosIndicacionesFormulario() {
+  const paciente = datosPacienteActual || {};
+  const base = datosIdentificacionInstitucionalPaciente(paciente);
+  const ahora = new Date();
+
+  return {
+    formato: valorCampo("indicacionesFormato") || "fray",
+    servicio: valorCampo("indicacionesServicio") || base.servicio || "Observacion",
+    fecha: valorCampo("indicacionesFecha") || ahora.toISOString().slice(0, 10),
+    hora: valorCampo("indicacionesHora") || ahora.toTimeString().slice(0, 5),
+    indicaciones: valorCampo("indicacionesTexto"),
+    pacienteNombre: base.nombrePaciente,
+    fechaNacimiento: base.fechaNacimiento,
+    edad: base.edad,
+    cama: base.cama,
+    expediente: base.expediente,
+    sexo: base.sexo,
+    genero: base.genero,
+    alergias: base.alergias,
+    firmas: [
+      {
+        nombre: valorCampo("indicacionesFirma1Nombre"),
+        cargo: valorCampo("indicacionesFirma1Cargo"),
+        cedula: valorCampo("indicacionesFirma1Cedula")
+      },
+      {
+        nombre: valorCampo("indicacionesFirma2Nombre"),
+        cargo: valorCampo("indicacionesFirma2Cargo"),
+        cedula: valorCampo("indicacionesFirma2Cedula")
+      },
+      {
+        nombre: valorCampo("indicacionesFirma3Nombre"),
+        cargo: valorCampo("indicacionesFirma3Cargo"),
+        cedula: valorCampo("indicacionesFirma3Cedula")
+      }
+    ]
+  };
+}
+
+function autollenarIndicaciones() {
+  const paciente = datosPacienteActual || {};
+  const base = datosIdentificacionInstitucionalPaciente(paciente);
+  const ahora = new Date();
+  const valores = {
+    indicacionesServicio: base.servicio || "Observacion",
+    indicacionesFecha: ahora.toISOString().slice(0, 10),
+    indicacionesHora: ahora.toTimeString().slice(0, 5),
+    indicacionesFirma1Nombre: paciente.medicoAdscritoEncargado || paciente.medicoTratante || medicoActualDatos.nombre || "",
+    indicacionesFirma1Cargo: paciente.medicoAdscritoEncargado || paciente.medicoTratante || medicoActualDatos.nombre ? "Medico adscrito" : "",
+    indicacionesFirma1Cedula: medicoActualDatos.cedula || medicoActualDatos.cedulaProfesional || "",
+    indicacionesFirma2Nombre: paciente.residenteEncargado || "",
+    indicacionesFirma2Cargo: paciente.residenteEncargado ? "Medico residente" : "",
+    indicacionesFirma2Cedula: ""
+  };
+
+  Object.entries(valores).forEach(([id, valor]) => {
+    if (!valorCampo(id)) ponerValor(id, valor);
+  });
+
+  const texto = document.getElementById("indicacionesTexto");
+  if (texto && !texto.value.trim()) {
+    texto.value = [
+      "Cuidados generales de enfermeria y signos vitales por turno.",
+      base.alergias ? `Alergias: ${base.alergias}.` : "Alergias: negadas o no conocidas.",
+      "Medicamentos:",
+      "Reportar eventualidades."
+    ].join("\n");
+  }
+}
+
+async function guardarIndicacionesPaciente() {
+  const datos = datosIndicacionesFormulario();
+
+  if (!datos.indicaciones) {
+    alert("Escribe las indicaciones medicas.");
+    return;
+  }
+
+  await addDoc(collection(db, "usuarios", uidPaciente, "indicaciones"), {
+    ...datos,
+    medicoUid: auth.currentUser?.uid || "",
+    fechaCreacion: new Date().toISOString()
+  });
+
+  await registrarAccionExpediente({
+    accion: "crear_indicaciones",
+    descripcion: "El medico registro indicaciones medicas del paciente.",
+    detalles: { formato: datos.formato, servicio: datos.servicio }
+  });
+
+  await cargarIndicacionesPaciente();
+  alert("Indicaciones guardadas.");
+}
+
+async function cargarIndicacionesPaciente() {
+  const lista = document.getElementById("listaIndicacionesPaciente");
+  if (!lista) return;
+
+  const snap = await getDocs(query(collection(db, "usuarios", uidPaciente, "indicaciones"), orderBy("fechaCreacion", "desc")));
+
+  lista.innerHTML = snap.empty
+    ? "<p>No hay indicaciones registradas.</p>"
+    : snap.docs.map((docIndicaciones) => {
+      const item = docIndicaciones.data();
+      return `
+        <article class="registro-card">
+          <div class="registro-top">
+            <strong>${escaparHTML(item.servicio || "Indicaciones")}</strong>
+            <span class="estado-badge">${escaparHTML(item.formato || "fray")}</span>
+          </div>
+          <p>${escaparHTML(item.indicaciones || "").replace(/\n/g, "<br>")}</p>
+          <small>${escaparHTML(item.fecha || "")} · ${escaparHTML(item.hora || "")}</small>
+        </article>
+      `;
+    }).join("");
+}
+
+async function htmlIndicacionesWord(datos) {
+  const encabezadoFray = datos.formato === "fray" ? await encabezadoFrayPacienteHTML() : "";
+  const encabezadoCognicion = `<h1>Cognicion - Indicaciones medicas</h1>`;
+  const identificacion = bloqueIdentificacionFrayPaciente({
+    nombrePaciente: datos.pacienteNombre,
+    fechaNacimiento: datos.fechaNacimiento,
+    edad: datos.edad,
+    cama: datos.cama,
+    expediente: datos.expediente,
+    sexo: datos.sexo,
+    genero: datos.genero,
+    servicio: datos.servicio,
+    alergias: datos.alergias
+  });
+
+  return `
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          ${estilosFrayPacienteHTML()}
+          .tabla-indicaciones th:first-child,
+          .tabla-indicaciones td:first-child { width: 22%; text-align: center; }
+          .tabla-indicaciones td:last-child { width: 78%; }
+        </style>
+      </head>
+      <body>
+        <div class="WordSection1">
+          ${datos.formato === "fray" ? encabezadoFray : encabezadoCognicion}
+          <h1>INDICACIONES MEDICAS</h1>
+          ${identificacion}
+          <table class="tabla-indicaciones">
+            <tr>
+              <th colspan="2">INDICACIONES MEDICAS DEL SERVICIO DE ${textoWordPaciente(datos.servicio).toUpperCase()}</th>
+            </tr>
+            <tr>
+              <td>
+                <b>Fecha y Hora</b><br>
+                ${textoWordPaciente(formatoFechaInterconsulta(datos.fecha))}<br>
+                ${textoWordPaciente(datos.hora)} h
+              </td>
+              <td class="contenido-largo">${textoMultilineaWordPaciente(datos.indicaciones)}</td>
+            </tr>
+          </table>
+          ${firmasFrayPacienteHTML(datos.firmas)}
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+async function descargarIndicacionesPaciente() {
+  const datos = datosIndicacionesFormulario();
+
+  if (!datos.indicaciones) {
+    alert("Escribe las indicaciones medicas antes de descargar.");
+    return;
+  }
+
+  const html = await htmlIndicacionesWord(datos);
+  const blob = crearDocxDesdeHtml(html);
+  const url = URL.createObjectURL(blob);
+  const enlace = document.createElement("a");
+  enlace.href = url;
+  enlace.download = `Indicaciones_${datos.formato}_${(datos.pacienteNombre || "paciente").replace(/\s+/g, "_")}_${datos.fecha}.docx`;
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+  URL.revokeObjectURL(url);
 }
 
 function fechaHoraZipActual() {
@@ -2734,6 +3005,8 @@ document.getElementById("guardarNotaFlotante")?.addEventListener("click", guarda
 document.getElementById("nuevaNotaFlotante")?.addEventListener("click", limpiarNotaFlotantePaciente);
 document.getElementById("guardarInterconsulta")?.addEventListener("click", guardarInterconsultaPaciente);
 document.getElementById("descargarInterconsulta")?.addEventListener("click", descargarInterconsultaPaciente);
+document.getElementById("guardarIndicaciones")?.addEventListener("click", guardarIndicacionesPaciente);
+document.getElementById("descargarIndicaciones")?.addEventListener("click", descargarIndicacionesPaciente);
 document.getElementById("cerrarIngresoPaciente")?.addEventListener("click", cerrarSelectorIngresoPaciente);
 document.getElementById("guardarIngresoPaciente")?.addEventListener("click", guardarIngresoPacienteDesdeModal);
 document.getElementById("limpiarIngresoPaciente")?.addEventListener("click", limpiarIngresoPacienteDesdeModal);

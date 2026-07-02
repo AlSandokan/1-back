@@ -38,6 +38,7 @@
       <button onclick="mostrarCarpetas()">Carpetas</button>
       <button onclick="mostrarNotasFlotantes()">Notas flotantes</button>
       <button onclick="mostrarInterconsulta()">Interconsulta</button>
+      <button onclick="mostrarIndicaciones()">Indicaciones</button>
       <button onclick="mostrarResultadosEscalas()">Resultados</button>
       <button onclick="previsualizarMiSalud()">Ver Mi Salud</button>
       <button onclick="mostrarPermisos()">Permisos</button>
@@ -79,6 +80,17 @@
           <div class="dato">
             <label>Edad</label>
             <div id="edadPaciente">No registrada</div>
+          </div>
+
+          <div class="dato consultas-en-linea">
+            <div>
+              <label>Fecha de ingreso <button class="boton-editar-dato" onclick="abrirSelectorIngresoPaciente()">Editar</button></label>
+              <div id="fechaIngresoPaciente">Sin registro</div>
+            </div>
+            <div>
+              <label>Dias de estancia</label>
+              <div id="diasEstanciaPaciente">Sin registro</div>
+            </div>
           </div>
 
           <div class="dato diagnosticos-lista">
@@ -143,11 +155,6 @@
           </div>
 
           <div class="dato">
-            <label>Fecha de ingreso <button class="boton-editar-dato" onclick="abrirSelectorIngresoPaciente()">Editar</button></label>
-            <div id="fechaIngresoPaciente">Sin registro</div>
-          </div>
-
-          <div class="dato">
             <label>Medico adscrito encargado <button class="boton-editar-dato" onclick="editarCampoPaciente('medicoAdscritoEncargado', 'Medico adscrito encargado', 'text')">Editar</button></label>
             <div id="medicoAdscritoEncargadoPaciente">Sin registro</div>
           </div>
@@ -187,10 +194,6 @@
             <div id="perimetroAbdominalPaciente">Sin registro</div>
           </div>
 
-          <div class="dato">
-            <label>Dias de estancia</label>
-            <div id="diasEstanciaPaciente">Sin registro</div>
-          </div>
         </div>
       </div>
     </section>
@@ -441,6 +444,51 @@
       <div class="tarjeta">
         <h2>Historial de interconsultas</h2>
         <div id="listaInterconsultasPaciente" class="panel-lista">Cargando interconsultas...</div>
+      </div>
+    </section>
+
+    <section id="seccionIndicaciones" style="display:none;">
+      <div class="tarjeta">
+        <h2>Indicaciones medicas</h2>
+        <p class="texto-suave">Registra indicaciones por paciente y descargalas en formato institucional Fray Bernardino.</p>
+
+        <div class="form-grid">
+          <label>Formato
+            <select id="indicacionesFormato">
+              <option value="fray">Fray Bernardino - Observacion</option>
+              <option value="cognicion">Cognicion</option>
+            </select>
+          </label>
+          <label>Servicio<input id="indicacionesServicio" placeholder="Ej. Observacion"></label>
+          <label>Fecha<input id="indicacionesFecha" type="date"></label>
+          <label>Hora<input id="indicacionesHora" type="time"></label>
+        </div>
+
+        <label>Indicaciones
+          <textarea id="indicacionesTexto" placeholder="Dieta, cuidados generales, vigilancia, riesgo de caida, alergias, medicamentos y reportar eventualidades."></textarea>
+        </label>
+
+        <div class="form-grid firmas-indicaciones">
+          <label>Firma campo 1 - Nombre<input id="indicacionesFirma1Nombre"></label>
+          <label>Firma campo 1 - Cargo<input id="indicacionesFirma1Cargo" placeholder="Ej. Medico adscrito de urgencias"></label>
+          <label>Firma campo 1 - Cedula<input id="indicacionesFirma1Cedula"></label>
+          <label>Firma campo 2 - Nombre<input id="indicacionesFirma2Nombre"></label>
+          <label>Firma campo 2 - Cargo<input id="indicacionesFirma2Cargo" placeholder="Ej. Medico residente de 3er ano"></label>
+          <label>Firma campo 2 - Cedula<input id="indicacionesFirma2Cedula"></label>
+          <label>Firma campo 3 - Nombre<input id="indicacionesFirma3Nombre"></label>
+          <label>Firma campo 3 - Cargo<input id="indicacionesFirma3Cargo" placeholder="Ej. Medico residente de 2do ano"></label>
+          <label>Firma campo 3 - Cedula<input id="indicacionesFirma3Cedula"></label>
+        </div>
+
+        <div class="form-actions">
+          <button id="guardarIndicaciones" type="button">Guardar indicaciones</button>
+          <button id="descargarIndicaciones" type="button" class="boton-secundario">Descargar formato</button>
+        </div>
+      </div>
+
+      <div class="tarjeta">
+        <h2>Historial de indicaciones</h2>
+        <div id="listaIndicacionesPaciente" class="panel-lista">Cargando indicaciones...</div>
       </div>
     </section>
 
