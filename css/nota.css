@@ -879,6 +879,37 @@ button:hover{
     font-weight: 700;
 }
 
+.seccion-firmas {
+    align-items: stretch;
+}
+
+.firma-campo {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid rgba(56, 189, 248, 0.18);
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.58);
+}
+
+.firma-campo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: #e5eefc;
+}
+
+.firma-campo-header strong {
+    letter-spacing: 0.04em;
+}
+
+.boton-mini {
+    min-height: 30px;
+    padding: 7px 10px;
+    font-size: 0.76rem;
+}
+
 @media print {
 
     body {

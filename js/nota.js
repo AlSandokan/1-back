@@ -50,6 +50,7 @@ let pacienteActualDatos = {};
 let uidMedicoActual = "";
 let apuntesMedicoCache = [];
 let notasFlotantesPacienteCache = [];
+let catalogoMedicosFirmasCache = [];
 
 iniciarMonitoreoSesion("Nota medica");
 
@@ -827,6 +828,113 @@ function valorCampo(id) {
 function asignarValor(id, valor) {
   const campo = document.getElementById(id);
   if (campo) campo.value = valor || "";
+}
+
+function normalizarTextoBusqueda(valor = "") {
+  return String(valor || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function referenciaCatalogoMedicosFirmas() {
+  if (!uidMedicoActual) return null;
+  return collection(db, "usuarios", uidMedicoActual, "catalogoMedicosFirmas");
+}
+
+function renderizarCatalogoMedicosFirmas() {
+  const datalist = document.getElementById("catalogoMedicosFirmas");
+  if (!datalist) return;
+
+  datalist.innerHTML = catalogoMedicosFirmasCache
+    .map((medico) => {
+      const detalle = [medico.cargo, medico.cedula ? `Ced. ${medico.cedula}` : ""]
+        .filter(Boolean)
+        .join(" · ");
+      return `<option value="${escaparHTML(medico.nombre || "")}" label="${escaparHTML(detalle)}"></option>`;
+    })
+    .join("");
+}
+
+async function cargarCatalogoMedicosFirmas() {
+  const ref = referenciaCatalogoMedicosFirmas();
+  if (!ref) return;
+
+  const qCatalogo = query(ref, orderBy("nombre"));
+  const snap = await getDocs(qCatalogo);
+  catalogoMedicosFirmasCache = snap.docs.map((docMedico) => ({
+    id: docMedico.id,
+    ...docMedico.data()
+  }));
+
+  renderizarCatalogoMedicosFirmas();
+}
+
+function buscarMedicoFirmaPorNombre(nombre) {
+  const clave = normalizarTextoBusqueda(nombre);
+  if (!clave) return null;
+  return catalogoMedicosFirmasCache.find((medico) => normalizarTextoBusqueda(medico.nombre) === clave) || null;
+}
+
+function aplicarMedicoFirma(numeroFirma, medico) {
+  if (!medico) return;
+  asignarValor(`obsFirma${numeroFirma}Nombre`, medico.nombre || "");
+  asignarValor(`obsFirma${numeroFirma}Cargo`, medico.cargo || "");
+  asignarValor(`obsFirma${numeroFirma}Cedula`, medico.cedula || "");
+}
+
+function configurarCatalogoMedicosFirmas() {
+  document.querySelectorAll("[data-firma-nombre]").forEach((campo) => {
+    campo.addEventListener("change", () => {
+      const numeroFirma = campo.dataset.firmaNombre;
+      const medico = buscarMedicoFirmaPorNombre(campo.value);
+      if (medico) aplicarMedicoFirma(numeroFirma, medico);
+    });
+  });
+
+  document.querySelectorAll("[data-guardar-medico-firma]").forEach((boton) => {
+    boton.addEventListener("click", () => guardarMedicoFirmaDesdeCampo(boton.dataset.guardarMedicoFirma));
+  });
+}
+
+async function guardarMedicoFirmaDesdeCampo(numeroFirma) {
+  const nombre = valorCampo(`obsFirma${numeroFirma}Nombre`).trim();
+  const cargo = valorCampo(`obsFirma${numeroFirma}Cargo`).trim();
+  const cedula = valorCampo(`obsFirma${numeroFirma}Cedula`).trim();
+  const ref = referenciaCatalogoMedicosFirmas();
+
+  if (!ref) {
+    alert("No se pudo identificar al medico para guardar el catalogo.");
+    return;
+  }
+
+  if (!nombre) {
+    alert("Escribe el nombre del medico antes de agregarlo al catalogo.");
+    return;
+  }
+
+  const existente = buscarMedicoFirmaPorNombre(nombre);
+  const payload = {
+    nombre,
+    cargo,
+    cedula,
+    actualizadoEn: serverTimestamp()
+  };
+
+  if (existente?.id) {
+    const confirmar = confirm("Este medico ya existe en el catalogo. ¿Deseas actualizar cargo y cedula?");
+    if (!confirmar) return;
+    await updateDoc(doc(db, "usuarios", uidMedicoActual, "catalogoMedicosFirmas", existente.id), payload);
+  } else {
+    await addDoc(ref, {
+      ...payload,
+      creadoEn: serverTimestamp()
+    });
+  }
+
+  await cargarCatalogoMedicosFirmas();
+  alert("Medico agregado al catalogo de firmas.");
 }
 
 function numeroClinico(valor) {
@@ -1611,6 +1719,8 @@ onAuthStateChanged(auth, async (user) => {
 
   uidMedicoActual = user.uid;
   await cargarBorradoresMedico();
+  await cargarCatalogoMedicosFirmas();
+  configurarCatalogoMedicosFirmas();
   document.getElementById("borradoresMedicoTexto")?.addEventListener("input", () => {
     const estado = document.getElementById("estadoBorradoresMedico");
     if (estado) estado.textContent = "Cambios sin guardar";

@@ -68,6 +68,7 @@ let estudiosCache = [];
 let escalasAsignadasCache = new Map();
 let diagnosticosCatalogoActual = [];
 let diagnosticoReemplazoIndex = null;
+let intervaloEstanciaPaciente = null;
 const CLAVE_CATALOGO_MANUAL = "cognicion_catalogo_diagnosticos_manual";
 let catalogoManualDiagnosticos = cargarCatalogoManualDiagnosticos();
 const CLAVE_MEDICAMENTOS_MANUALES = "cognicion_catalogo_medicamentos_manual";
@@ -259,10 +260,35 @@ function formatearEstancia(estancia) {
   return partes.join(" ");
 }
 
+function actualizarEstanciaPaciente(datos = datosPacienteActual || {}) {
+  const fechaIngreso = obtenerFechaIngreso(datos);
+  const fechaIngresoElemento = document.getElementById("fechaIngresoPaciente");
+  const estanciaElemento = document.getElementById("diasEstanciaPaciente");
+
+  if (fechaIngresoElemento) {
+    fechaIngresoElemento.innerText = formatearFecha(fechaIngreso);
+  }
+
+  if (estanciaElemento) {
+    estanciaElemento.innerText = formatearEstancia(calcularDiasEstancia(fechaIngreso));
+  }
+}
+
+function iniciarActualizacionEstanciaPaciente() {
+  if (intervaloEstanciaPaciente) {
+    clearInterval(intervaloEstanciaPaciente);
+  }
+
+  actualizarEstanciaPaciente();
+  intervaloEstanciaPaciente = setInterval(() => {
+    actualizarEstanciaPaciente();
+  }, 60000);
+}
+
 function formatearFecha(fecha) {
   if (!fecha) return "Sin registro";
 
-  const [soloFecha, hora] = String(fecha).split("T");
+  const [soloFecha, hora] = normalizarFechaIngreso(fecha).split("T");
   const partes = soloFecha.split("-");
   if (partes.length !== 3) return fecha;
 
@@ -711,11 +737,8 @@ async function cargarDatosPaciente() {
   document.getElementById("curpPaciente").innerText =
     datos.curp || datos.datosInstitucionales?.curp || "Sin registro";
 
-  const fechaIngreso = obtenerFechaIngreso(datos);
-  const diasEstancia = calcularDiasEstancia(fechaIngreso);
-
-  document.getElementById("fechaIngresoPaciente").innerText =
-    formatearFecha(fechaIngreso);
+  actualizarEstanciaPaciente(datos);
+  iniciarActualizacionEstanciaPaciente();
 
   document.getElementById("medicoAdscritoEncargadoPaciente").innerText =
     datos.medicoAdscritoEncargado ||
@@ -747,8 +770,7 @@ async function cargarDatosPaciente() {
   document.getElementById("perimetroAbdominalPaciente").innerText =
     datos.perimetroAbdominal || datos.signosVitales?.perimetroAbdominal || "Sin registro";
 
-  document.getElementById("diasEstanciaPaciente").innerText =
-    formatearEstancia(diasEstancia);
+  actualizarEstanciaPaciente(datos);
 }
 
 window.mostrarResumen = function() {
@@ -1308,6 +1330,12 @@ async function guardarIngresoPacienteDesdeModal() {
     datosInstitucionales
   });
 
+  datosPacienteActual = {
+    ...(datosPacienteActual || datos || {}),
+    fechaIngreso,
+    datosInstitucionales
+  };
+  actualizarEstanciaPaciente(datosPacienteActual);
   cerrarSelectorIngresoPaciente();
   await cargarDatosPaciente();
 }
@@ -1324,6 +1352,12 @@ async function limpiarIngresoPacienteDesdeModal() {
     datosInstitucionales
   });
 
+  datosPacienteActual = {
+    ...(datosPacienteActual || datos || {}),
+    fechaIngreso: "",
+    datosInstitucionales
+  };
+  actualizarEstanciaPaciente(datosPacienteActual);
   cerrarSelectorIngresoPaciente();
   await cargarDatosPaciente();
 }
