@@ -525,7 +525,11 @@
             </label>
 
             <label>2. Signos vitales y cuidados
-              <input id="indicacionesCuidados" placeholder="Ej. Signos vitales por turno y cuidados generales por enfermeria">
+              <div class="campo-catalogo-inline">
+                <input id="indicacionesCuidados" list="catalogoIndicacionesCuidados" placeholder="Ej. Signos vitales por turno y cuidados generales por enfermeria">
+                <button type="button" class="boton-mini-catalogo" data-catalogo-indicaciones="cuidados" data-input-catalogo="indicacionesCuidados">Agregar</button>
+              </div>
+              <datalist id="catalogoIndicacionesCuidados"></datalist>
             </label>
 
             <label>3. Alergias

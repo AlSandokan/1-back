@@ -80,6 +80,13 @@ let catalogoManualMedicamentos = cargarCatalogoManualMedicamentos();
 const CLAVE_CATALOGOS_INDICACIONES = "cognicion_catalogos_indicaciones";
 const CATALOGOS_INDICACIONES_DEFAULT = {
   dieta: ["NORMAL", "BLANDA", "LIQUIDA", "HIPOSODICA", "DIABETICA"],
+  cuidados: [
+    "Signos vitales por turno y cuidados generales por enfermeria",
+    "Signos vitales por turno",
+    "Cuidados generales por enfermeria",
+    "Signos vitales cada 8 horas",
+    "Signos vitales cada 6 horas"
+  ],
   alergias: ["Negadas", "No conocidas"],
   riesgoCaida: ["BAJO", "MEDIO", "ALTO"],
   vigilancia: ["RIESGO SUICIDA", "RIESGO HETEROAGRESIVO", "RIESGO DE FUGA", "RIESGO DE AUTOLESION"]
@@ -161,6 +168,7 @@ function guardarCatalogosIndicaciones() {
 function renderizarCatalogosIndicaciones() {
   const mapas = {
     dieta: "catalogoIndicacionesDieta",
+    cuidados: "catalogoIndicacionesCuidados",
     alergias: "catalogoIndicacionesAlergias",
     riesgoCaida: "catalogoIndicacionesRiesgoCaida",
     vigilancia: "catalogoIndicacionesVigilancia"
@@ -3608,6 +3616,14 @@ document.querySelectorAll("[data-firma-indicaciones-nombre]").forEach((campo) =>
     const numeroFirma = campo.dataset.firmaIndicacionesNombre;
     const medico = buscarMedicoFirmaIndicacionesPorNombre(campo.value);
     if (medico) aplicarMedicoFirmaIndicaciones(numeroFirma, medico);
+  });
+});
+document.querySelectorAll("[data-firma-indicaciones-select]").forEach((selector) => {
+  selector.addEventListener("change", () => {
+    aplicarMedicoFirmaIndicacionesPorId(
+      selector.dataset.firmaIndicacionesSelect,
+      selector.value
+    );
   });
 });
 document.querySelectorAll("[data-guardar-medico-indicaciones]").forEach((boton) => {
