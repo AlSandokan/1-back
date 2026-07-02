@@ -455,39 +455,60 @@ function renderizarCarpetasInlineMedico() {
   if (!contenedor) return;
 
   const carpetas = [
-    { valor: "", etiqueta: "Todos", total: totalPacientesEnCarpeta("") },
+    { valor: "", etiqueta: "Todos", total: totalPacientesEnCarpeta(""), editable: false },
     ...carpetasInlineDisponibles().map((carpeta) => ({
       valor: carpeta,
       etiqueta: carpeta,
-      total: totalPacientesEnCarpeta(carpeta)
+      total: totalPacientesEnCarpeta(carpeta),
+      editable: true
     })),
     ...(carpetaInlineVisible("__sin_carpeta__")
-      ? [{ valor: "__sin_carpeta__", etiqueta: "Sin carpeta", total: totalPacientesEnCarpeta("__sin_carpeta__") }]
+      ? [{ valor: "__sin_carpeta__", etiqueta: "Sin carpeta", total: totalPacientesEnCarpeta("__sin_carpeta__"), editable: false }]
       : [])
   ];
 
   contenedor.innerHTML = carpetas.map((carpeta) => {
     const activa = filtroCarpetaActual === carpeta.valor;
     return `
-      <button
-        type="button"
-        class="carpeta-inline-medico ${activa ? "activa" : ""}"
-        data-carpeta-inline="${escaparHTML(carpeta.valor)}"
-        title="Doble clic para abrir ${escaparHTML(carpeta.etiqueta)}"
-      >
-        <span>${escaparHTML(carpeta.etiqueta)}</span>
-        <small>${carpeta.total}</small>
-      </button>
+      <div class="carpeta-inline-grupo ${activa ? "activa" : ""}">
+        <button
+          type="button"
+          class="carpeta-inline-medico ${activa ? "activa" : ""}"
+          data-carpeta-inline="${escaparHTML(carpeta.valor)}"
+          title="Abrir ${escaparHTML(carpeta.etiqueta)}"
+        >
+          <span>${escaparHTML(carpeta.etiqueta)}</span>
+          <small>${carpeta.total}</small>
+        </button>
+        ${carpeta.editable ? `
+          <button
+            type="button"
+            class="carpeta-inline-editar"
+            data-editar-carpeta-inline="${escaparHTML(carpeta.valor)}"
+            title="Editar nombre de ${escaparHTML(carpeta.etiqueta)}"
+          >
+            Editar
+          </button>
+        ` : ""}
+      </div>
     `;
   }).join("");
 
   contenedor.querySelectorAll("[data-carpeta-inline]").forEach((boton) => {
-    boton.addEventListener("dblclick", () => {
+    boton.addEventListener("click", () => {
       abrirCarpetaDesdeLista(boton.dataset.carpetaInline || "");
     });
 
     boton.addEventListener("keydown", (e) => {
       if (e.key === "Enter") abrirCarpetaDesdeLista(boton.dataset.carpetaInline || "");
+    });
+  });
+
+  contenedor.querySelectorAll("[data-editar-carpeta-inline]").forEach((boton) => {
+    boton.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      editarNombreCarpetaMedico(boton.dataset.editarCarpetaInline || "");
     });
   });
 }
@@ -563,6 +584,19 @@ function actualizarTextoCarpetasPacientes() {
   renderizarCarpetasInlineMedico();
 }
 
+function moverModalesPacienteAlBody() {
+  [
+    "modalFiltroAtencion",
+    "modalColumnasPacientes",
+    "modalCarpetasPacientes"
+  ].forEach((id) => {
+    const modal = document.getElementById(id);
+    if (modal && modal.parentElement !== document.body) {
+      document.body.appendChild(modal);
+    }
+  });
+}
+
 function abrirCarpetasPacientes() {
   const modal = document.getElementById("modalCarpetasPacientes");
   if (!modal) return;
@@ -614,6 +648,7 @@ function alternarColumnaCarpetaDesdeFiltro() {
 }
 
 function inicializarCarpetasPacientes() {
+  moverModalesPacienteAlBody();
   actualizarTextoCarpetasPacientes();
 
   document.getElementById("btnCarpetasPacientes")?.addEventListener("click", abrirCarpetasPacientes);
@@ -1519,7 +1554,15 @@ function dibujarBarras(canvasId, conteo) {
   const ctx = canvas.getContext("2d");
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  const cssHeight = Number(canvas.getAttribute("height")) || rect.height || 180;
+  const entradas = Object.entries(conteo).sort((a, b) => b[1] - a[1]);
+  const barH = 28;
+  const separacion = 10;
+  const cssHeight = Math.max(
+    Number(canvas.getAttribute("height")) || 180,
+    28 + entradas.length * (barH + separacion)
+  );
+
+  canvas.style.height = `${cssHeight}px`;
   canvas.width = rect.width * dpr;
   canvas.height = cssHeight * dpr;
   ctx.scale(dpr, dpr);
@@ -1528,14 +1571,12 @@ function dibujarBarras(canvasId, conteo) {
   const height = cssHeight;
   ctx.clearRect(0, 0, width, height);
 
-  const entradas = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 8);
   const max = Math.max(...entradas.map(([, v]) => v), 1);
-  const barH = Math.max(18, (height - 28) / Math.max(entradas.length, 1) - 8);
 
   ctx.font = "12px Arial";
   entradas.forEach(([label, valor], i) => {
-    const y = 18 + i * (barH + 8);
-    const barW = (width - 150) * valor / max;
+    const y = 18 + i * (barH + separacion);
+    const barW = Math.max(2, (width - 150) * valor / max);
     ctx.fillStyle = "rgba(56, 189, 248, 0.22)";
     ctx.fillRect(130, y, barW, barH);
     ctx.fillStyle = "#38bdf8";

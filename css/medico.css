@@ -215,7 +215,7 @@ body {
 .modal-filtro-atencion {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 2147483000;
   display: grid;
   place-items: center;
   padding: 18px;
@@ -224,6 +224,7 @@ body {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.18s ease;
+  isolation: isolate;
 }
 
 .carpetas-lista-pacientes {
@@ -266,6 +267,13 @@ body {
   font-size: 12px;
 }
 
+.carpeta-inline-grupo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+}
+
 .carpeta-inline-medico {
   display: inline-flex;
   align-items: center;
@@ -283,12 +291,31 @@ body {
   transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
 }
 
+.carpeta-inline-editar {
+  min-height: 34px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 211, 252, 0.16);
+  background: rgba(15, 23, 42, 0.58);
+  color: #7dd3fc;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 900;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+}
+
 .carpeta-inline-medico:hover,
-.carpeta-inline-medico:focus-visible {
+.carpeta-inline-medico:focus-visible,
+.carpeta-inline-editar:hover,
+.carpeta-inline-editar:focus-visible {
   border-color: rgba(56, 189, 248, 0.60);
   background: rgba(14, 35, 58, 0.92);
   box-shadow: 0 0 18px rgba(56, 189, 248, 0.14);
   outline: none;
+}
+
+.carpeta-inline-medico:hover,
+.carpeta-inline-medico:focus-visible {
   transform: translateY(-1px);
 }
 
@@ -319,6 +346,8 @@ body {
 }
 
 .panel-filtro-atencion {
+  position: relative;
+  z-index: 1;
   width: min(420px, 100%);
   max-height: calc(100vh - 36px);
   border: 1px solid rgba(56, 189, 248, 0.28);
@@ -696,10 +725,15 @@ body {
 
 .grid-graficas > div {
   min-width: 0;
+  min-height: 0;
+  max-height: 320px;
+  overflow: auto;
   padding: 16px;
   border-radius: 16px;
   border: 1px solid rgba(255,255,255,0.10);
   background: rgba(255,255,255,0.05);
+  scrollbar-width: thin;
+  scrollbar-color: #38bdf8 #020617;
 }
 
 .grid-graficas h3 {
@@ -711,6 +745,8 @@ body {
 .grid-graficas canvas {
   width: 100%;
   max-width: 100%;
+  min-height: 180px;
+  display: block;
 }
 
 .lista-simple {
