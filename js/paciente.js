@@ -402,9 +402,7 @@ function referenciaCatalogoMedicosFirmasIndicaciones() {
 
 function renderizarCatalogoMedicosFirmasIndicaciones() {
   const datalist = document.getElementById("catalogoMedicosFirmasIndicaciones");
-  if (!datalist) return;
-
-  datalist.innerHTML = catalogoMedicosFirmasIndicacionesCache
+  const opciones = catalogoMedicosFirmasIndicacionesCache
     .map((medico) => {
       const detalle = [medico.cargo, medico.cedula ? `Ced. ${medico.cedula}` : ""]
         .filter(Boolean)
@@ -412,6 +410,25 @@ function renderizarCatalogoMedicosFirmasIndicaciones() {
       return `<option value="${escaparHTML(medico.nombre || "")}" label="${escaparHTML(detalle)}"></option>`;
     })
     .join("");
+
+  if (datalist) datalist.innerHTML = opciones;
+
+  [1, 2, 3].forEach((numeroFirma) => {
+    const selector = document.getElementById(`indicacionesFirma${numeroFirma}Catalogo`);
+    const valorActual = selector?.value || "";
+    if (!selector) return;
+
+    selector.innerHTML = `
+      <option value="">Seleccionar medico</option>
+      ${catalogoMedicosFirmasIndicacionesCache.map((medico) => {
+        const detalle = [medico.cargo, medico.cedula ? `Ced. ${medico.cedula}` : ""]
+          .filter(Boolean)
+          .join(" · ");
+        return `<option value="${escaparHTML(medico.id)}">${escaparHTML(medico.nombre || "Sin nombre")}${detalle ? ` · ${escaparHTML(detalle)}` : ""}</option>`;
+      }).join("")}
+    `;
+    selector.value = valorActual;
+  });
 }
 
 async function cargarCatalogoMedicosFirmasIndicaciones() {
@@ -442,6 +459,11 @@ function aplicarMedicoFirmaIndicaciones(numeroFirma, medico) {
   ponerValor(`indicacionesFirma${numeroFirma}Nombre`, medico.nombre || "");
   ponerValor(`indicacionesFirma${numeroFirma}Cargo`, medico.cargo || "");
   ponerValor(`indicacionesFirma${numeroFirma}Cedula`, medico.cedula || "");
+}
+
+function aplicarMedicoFirmaIndicacionesPorId(numeroFirma, medicoId) {
+  const medico = catalogoMedicosFirmasIndicacionesCache.find((item) => item.id === medicoId);
+  if (medico) aplicarMedicoFirmaIndicaciones(numeroFirma, medico);
 }
 
 async function guardarMedicoFirmaIndicaciones(numeroFirma) {
@@ -2543,6 +2565,14 @@ async function asegurarTratamientosCache() {
 }
 
 function medicamentosActivosIndicaciones() {
+  const checksDisponibles = [...document.querySelectorAll("[data-medicamento-indicacion]")];
+  const checks = checksDisponibles
+    .filter((check) => check.checked)
+    .map((check) => check.value)
+    .filter(Boolean);
+
+  if (checksDisponibles.length) return checks;
+
   return tratamientosCache
     .filter((t) => (t.estado || "activo") === "activo")
     .map((t) => formatearIndicacionTratamiento(t, true))
@@ -2582,10 +2612,24 @@ function renderizarMedicamentosIndicaciones() {
   const contenedor = document.getElementById("listaMedicamentosIndicaciones");
   if (!contenedor) return;
 
-  const medicamentos = medicamentosActivosIndicaciones();
-  contenedor.innerHTML = medicamentos.length
-    ? medicamentos.map((medicamento) => `<p>${escaparHTML(medicamento)}</p>`).join("")
+  const tratamientosActivos = tratamientosCache.filter((t) => (t.estado || "activo") === "activo");
+  contenedor.innerHTML = tratamientosActivos.length
+    ? tratamientosActivos.map((tratamiento, index) => {
+      const indicacion = formatearIndicacionTratamiento(tratamiento, true);
+      return `
+        <label class="medicamento-indicacion-item">
+          <input type="checkbox" data-medicamento-indicacion value="${escaparHTML(indicacion)}" checked>
+          <span>${escaparHTML(indicacion || `Medicamento ${index + 1}`)}</span>
+        </label>
+      `;
+    }).join("")
     : "<p>Sin medicamentos activos registrados.</p>";
+
+  contenedor.querySelectorAll("[data-medicamento-indicacion]").forEach((check) => {
+    check.addEventListener("change", () => {
+      if (!textoIndicacionesEditado) actualizarTextoIndicaciones();
+    });
+  });
 }
 
 function autollenarIndicaciones() {
