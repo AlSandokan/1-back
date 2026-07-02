@@ -36,7 +36,6 @@ let filtrosAtencionActuales = cargarPreferenciasFiltroAtencion();
 const COLUMNAS_PACIENTES = [
   { key: "cama", label: "Cama", cssVar: "--col-cama" },
   { key: "nombre", label: "Nombre", cssVar: "--col-nombre", obligatoria: true },
-  { key: "carpeta", label: "Carpeta", cssVar: "--col-carpeta" },
   { key: "ingreso", label: "Ingreso", cssVar: "--col-ingreso" },
   { key: "estancia", label: "Estancia", cssVar: "--col-estancia" },
   { key: "edad", label: "Edad", cssVar: "--col-edad" },
@@ -45,7 +44,8 @@ const COLUMNAS_PACIENTES = [
   { key: "ultima", label: "Ultima consulta", cssVar: "--col-ultima" },
   { key: "proxima", label: "Proxima consulta", cssVar: "--col-proxima" },
   { key: "adscrito", label: "Adscrito", cssVar: "--col-adscrito" },
-  { key: "residente", label: "Residente", cssVar: "--col-residente" }
+  { key: "residente", label: "Residente", cssVar: "--col-residente" },
+  { key: "carpeta", label: "Carpeta", cssVar: "--col-carpeta" }
 ];
 const COLUMNAS_PACIENTES_DEFAULT = COLUMNAS_PACIENTES.map((columna) => columna.key);
 const STORAGE_COLUMNAS_PACIENTES = "cognicion.medico.columnasPacientes";
@@ -323,6 +323,7 @@ function abrirCarpetasPacientes() {
 
   renderizarSelectorFiltroCarpetas();
   renderizarListaCarpetasMedico();
+  sincronizarFiltroColumnaCarpeta();
   modal.classList.add("abierto");
   modal.setAttribute("aria-hidden", "false");
 }
@@ -343,6 +344,28 @@ function aplicarFiltroCarpetaDesdeModal() {
   cerrarCarpetasPacientes();
 }
 
+function sincronizarFiltroColumnaCarpeta() {
+  const check = document.getElementById("mostrarColumnaCarpetaMedico");
+  if (!check) return;
+
+  check.checked = columnasPacientesVisibles.has("carpeta");
+}
+
+function alternarColumnaCarpetaDesdeFiltro() {
+  const check = document.getElementById("mostrarColumnaCarpetaMedico");
+  if (!check) return;
+
+  if (check.checked) {
+    columnasPacientesVisibles.add("carpeta");
+  } else {
+    columnasPacientesVisibles.delete("carpeta");
+  }
+
+  guardarPreferenciasColumnasPacientes();
+  aplicarColumnasPacientes();
+  renderizarOpcionesColumnasPacientes();
+}
+
 function inicializarCarpetasPacientes() {
   actualizarTextoCarpetasPacientes();
 
@@ -350,6 +373,7 @@ function inicializarCarpetasPacientes() {
   document.getElementById("cerrarCarpetasPacientes")?.addEventListener("click", cerrarCarpetasPacientes);
   document.getElementById("crearCarpetaMedico")?.addEventListener("click", crearCarpetaMedico);
   document.getElementById("aplicarFiltroCarpetaMedico")?.addEventListener("click", aplicarFiltroCarpetaDesdeModal);
+  document.getElementById("mostrarColumnaCarpetaMedico")?.addEventListener("change", alternarColumnaCarpetaDesdeFiltro);
   document.getElementById("limpiarFiltroCarpetaMedico")?.addEventListener("click", () => {
     filtroCarpetaActual = "";
     guardarPreferenciaFiltroCarpeta();
@@ -837,11 +861,6 @@ function mostrarPacientes(pacientes) {
       <a class="fila-paciente" href="paciente.html?id=${paciente.id}">
         <span class="paciente-dato cama-columna" data-col-key="cama">${cama}</span>
         <span class="paciente-nombre" data-col-key="nombre">${nombre}</span>
-        <span class="paciente-dato carpeta-columna" data-col-key="carpeta">
-          <select class="selector-carpeta" data-paciente-id="${paciente.id}" aria-label="Carpeta">
-            ${opcionesCarpetasHTML(carpetaPrincipal)}
-          </select>
-        </span>
         <span class="paciente-dato" data-col-key="ingreso">${fechaIngreso}</span>
         <span class="paciente-dato" data-col-key="estancia">${diasEstancia}</span>
         <span class="paciente-dato" data-col-key="edad">${edad}</span>
@@ -860,6 +879,11 @@ function mostrarPacientes(pacientes) {
         <span class="paciente-dato" data-col-key="proxima">${proximaConsulta}</span>
         <span class="paciente-dato" data-col-key="adscrito">${medicoAdscrito}</span>
         <span class="paciente-dato" data-col-key="residente">${residente}</span>
+        <span class="paciente-dato carpeta-columna" data-col-key="carpeta">
+          <select class="selector-carpeta" data-paciente-id="${paciente.id}" aria-label="Carpeta">
+            ${opcionesCarpetasHTML(carpetaPrincipal)}
+          </select>
+        </span>
       </a>
     `;
   });
