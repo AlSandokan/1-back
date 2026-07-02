@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="css/theme.css">
 <link rel="icon" type="image/png" href="assets/favicon-cognicion.png">
 <link rel="stylesheet" href="css/nota.css">
+<link rel="stylesheet" href="css/dictado.css">
 </head>
 
 <body>
@@ -150,6 +151,35 @@
     </button>
     </div>
 </details>
+
+<section class="dictado-clinico-card" aria-labelledby="tituloDictadoClinico">
+    <div class="dictado-clinico-header">
+        <div>
+            <span class="dictado-clinico-etiqueta">Transcripcion asistida</span>
+            <h2 id="tituloDictadoClinico">Dictado clinico</h2>
+            <p>Dicta, revisa y corrige antes de integrar el texto a la nota actual.</p>
+        </div>
+        <div id="estadoDictadoClinico" class="dictado-clinico-estado">Dictado detenido</div>
+    </div>
+
+    <div class="dictado-clinico-alertas">
+        <p>El dictado por voz puede contener errores. Revise y corrija el texto antes de guardar la nota clinica.</p>
+        <p>Utilice esta funcion unicamente con autorizacion del paciente.</p>
+    </div>
+
+    <textarea
+        id="textoDictadoClinico"
+        class="dictado-clinico-texto"
+        placeholder="El texto dictado aparecera aqui. Revise y corrija antes de insertarlo en la nota."
+    ></textarea>
+
+    <div class="dictado-clinico-acciones">
+        <button id="btnIniciarDictado" type="button" class="boton-secundario">Iniciar dictado</button>
+        <button id="btnPausarDictado" type="button" class="boton-secundario">Pausar dictado</button>
+        <button id="btnLimpiarDictado" type="button" class="boton-secundario">Limpiar dictado</button>
+        <button id="btnInsertarDictado" type="button">Insertar en nota</button>
+    </div>
+</section>
 
 <label for="buscadorDiagnostico">Diagnostico visible para paciente (CIE-10)</label>
 <input
@@ -376,6 +406,7 @@ Cancelar edicion
 </div>
 
 <script type="module" src="js/nota.js"></script>
+<script type="module" src="js/dictado.js"></script>
 
 </body>
 </html>

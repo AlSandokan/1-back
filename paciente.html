@@ -673,6 +673,15 @@
           <label>Dosis/horario<input id="tratamientoDosis" placeholder="Ej. 1 tableta a las 08:00"></label>
           <label>Horarios<input id="tratamientoHorarios" placeholder="Ej. 08:00, 22:00"></label>
           <label>Fecha de inicio<input id="tratamientoFechaInicio" type="date"></label>
+          <label>Cantidad total al día</label>
+          <input type="number"
+            id="cantidadTotalDia"
+            min="0"
+            step="0.5"
+            placeholder="Ej. 2"
+          />
+          const cantidadTotalDia = Number(document.getElementById("cantidadTotalDia").value);
+          
           <label>Estado
             <select id="tratamientoEstado">
               <option value="activo">Activo</option>

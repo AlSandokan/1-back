@@ -480,16 +480,6 @@ function renderizarCarpetasInlineMedico() {
           <span>${escaparHTML(carpeta.etiqueta)}</span>
           <small>${carpeta.total}</small>
         </button>
-        ${carpeta.editable ? `
-          <button
-            type="button"
-            class="carpeta-inline-editar"
-            data-editar-carpeta-inline="${escaparHTML(carpeta.valor)}"
-            title="Editar nombre de ${escaparHTML(carpeta.etiqueta)}"
-          >
-            Editar
-          </button>
-        ` : ""}
       </div>
     `;
   }).join("");
@@ -501,14 +491,6 @@ function renderizarCarpetasInlineMedico() {
 
     boton.addEventListener("keydown", (e) => {
       if (e.key === "Enter") abrirCarpetaDesdeLista(boton.dataset.carpetaInline || "");
-    });
-  });
-
-  contenedor.querySelectorAll("[data-editar-carpeta-inline]").forEach((boton) => {
-    boton.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      editarNombreCarpetaMedico(boton.dataset.editarCarpetaInline || "");
     });
   });
 }
