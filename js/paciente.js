@@ -1,5 +1,6 @@
 ﻿import { auth, db } from "./firebase.js";
 import { ESCALAS_PSIQUIATRICAS } from "./data/escalasPsiquiatricas.js";
+import { MEDICAMENTOS_PRESENTACIONES } from "./data/medicamentos.js";
 import { CIE10 } from "./data/cie10.js";
 import { CIE11 } from "./data/cie11.js";
 import { registrarEventoAuditoria } from "./services/auditoria.js";
@@ -69,6 +70,8 @@ let diagnosticosCatalogoActual = [];
 let diagnosticoReemplazoIndex = null;
 const CLAVE_CATALOGO_MANUAL = "cognicion_catalogo_diagnosticos_manual";
 let catalogoManualDiagnosticos = cargarCatalogoManualDiagnosticos();
+const CLAVE_MEDICAMENTOS_MANUALES = "cognicion_catalogo_medicamentos_manual";
+let catalogoManualMedicamentos = cargarCatalogoManualMedicamentos();
 
 iniciarMonitoreoSesion("Expediente paciente");
 
@@ -96,6 +99,28 @@ function catalogoDiagnosticosCombinado() {
     ...CIE10.map((dx) => ({ ...dx, catalogo: "CIE-10" })),
     ...CIE11.map((dx) => ({ ...dx, catalogo: "CIE-11" })),
     ...catalogoManualDiagnosticos
+  ];
+}
+
+function cargarCatalogoManualMedicamentos() {
+  try {
+    const guardado = localStorage.getItem(CLAVE_MEDICAMENTOS_MANUALES);
+    const datos = guardado ? JSON.parse(guardado) : [];
+    return Array.isArray(datos) ? datos : [];
+  } catch (error) {
+    console.warn("No se pudo cargar el catalogo manual de medicamentos", error);
+    return [];
+  }
+}
+
+function guardarCatalogoManualMedicamentos() {
+  localStorage.setItem(CLAVE_MEDICAMENTOS_MANUALES, JSON.stringify(catalogoManualMedicamentos));
+}
+
+function catalogoMedicamentosTratamiento() {
+  return [
+    ...MEDICAMENTOS_PRESENTACIONES,
+    ...catalogoManualMedicamentos
   ];
 }
 
@@ -260,6 +285,131 @@ function valorCampo(id) {
 function ponerValor(id, valor) {
   const campo = document.getElementById(id);
   if (campo) campo.value = valor || "";
+}
+
+function configurarCatalogoMedicamentosTratamiento() {
+  const lista = document.getElementById("catalogoMedicamentosPsiquiatricos");
+  const campo = document.getElementById("tratamientoMedicamento");
+  const estado = document.getElementById("estadoCatalogoMedicamento");
+
+  if (!lista || !campo) return;
+
+  const renderizarCatalogo = () => {
+    lista.innerHTML = catalogoMedicamentosTratamiento()
+    .map((medicamento) => `
+      <option
+        value="${escaparHTML(medicamento.texto)}"
+        label="${escaparHTML(`${medicamento.agregadoManual ? "Agregado manualmente · " : ""}${medicamento.clase || "Sin clase"} · ${medicamento.dosisHabitual || "Sin dosis habitual"}`)}"
+      ></option>
+    `)
+    .join("");
+  };
+
+  const actualizarEstado = () => {
+    if (!estado) return;
+    const texto = campo.value.trim();
+    if (!texto) {
+      estado.textContent = "";
+      estado.classList.remove("visible");
+      return;
+    }
+
+    const existe = catalogoMedicamentosTratamiento().some((medicamento) =>
+      medicamento.texto.toLowerCase() === texto.toLowerCase()
+    );
+    estado.textContent = existe
+      ? "Medicamento encontrado en catálogo."
+      : "No está en el catálogo. Puedes añadirlo manualmente.";
+    estado.classList.add("visible");
+    estado.classList.toggle("alerta", !existe);
+  };
+
+  renderizarCatalogo();
+
+  campo.addEventListener("change", () => {
+    const seleccionado = catalogoMedicamentosTratamiento().find((medicamento) =>
+      medicamento.texto.toLowerCase() === campo.value.trim().toLowerCase()
+    );
+
+    if (seleccionado) campo.value = seleccionado.texto;
+    actualizarEstado();
+  });
+
+  campo.addEventListener("input", actualizarEstado);
+
+  document.addEventListener("catalogoMedicamentosActualizado", () => {
+    renderizarCatalogo();
+    actualizarEstado();
+  });
+}
+
+function abrirMedicamentoManual() {
+  const modal = document.getElementById("modalMedicamentoManual");
+  if (!modal) return;
+
+  const textoActual = valorCampo("tratamientoMedicamento");
+  if (textoActual) {
+    const partes = textoActual.split(",");
+    ponerValor("medicamentoManualNombre", partes[0]?.trim() || "");
+    ponerValor("medicamentoManualPresentacion", partes.slice(1).join(",").replace(/\.$/, "").trim());
+  }
+
+  modal.classList.add("abierto");
+  modal.setAttribute("aria-hidden", "false");
+}
+
+function cerrarMedicamentoManual() {
+  const modal = document.getElementById("modalMedicamentoManual");
+  if (!modal) return;
+  modal.classList.remove("abierto");
+  modal.setAttribute("aria-hidden", "true");
+}
+
+function limpiarMedicamentoManual() {
+  [
+    "medicamentoManualNombre",
+    "medicamentoManualPresentacion",
+    "medicamentoManualClase",
+    "medicamentoManualDosisHabitual",
+    "medicamentoManualNotas"
+  ].forEach((id) => ponerValor(id, ""));
+}
+
+function guardarMedicamentoManual() {
+  const nombre = valorCampo("medicamentoManualNombre");
+  const presentacion = valorCampo("medicamentoManualPresentacion");
+  const clase = valorCampo("medicamentoManualClase") || "Manual";
+  const dosisHabitual = valorCampo("medicamentoManualDosisHabitual");
+  const notas = valorCampo("medicamentoManualNotas");
+
+  if (!nombre || !presentacion) {
+    alert("Escribe medicamento y presentación.");
+    return;
+  }
+
+  const texto = `${nombre}, ${presentacion.replace(/\.$/, "")}.`;
+  const existe = catalogoMedicamentosTratamiento().some((medicamento) =>
+    medicamento.texto.toLowerCase() === texto.toLowerCase()
+  );
+
+  if (!existe) {
+    catalogoManualMedicamentos.push({
+      nombre,
+      presentacion,
+      clase,
+      dosisHabitual,
+      notas,
+      texto,
+      agregadoManual: true,
+      fechaAgregado: new Date().toISOString()
+    });
+    guardarCatalogoManualMedicamentos();
+  }
+
+  ponerValor("tratamientoMedicamento", texto);
+  document.dispatchEvent(new CustomEvent("catalogoMedicamentosActualizado"));
+  limpiarMedicamentoManual();
+  cerrarMedicamentoManual();
 }
 
 function ocultarSecciones() {
@@ -2337,6 +2487,8 @@ function formatearIndicacionTratamiento(t = {}, incluirMedicamento = true) {
   return partes.join(" ");
 }
 
+configurarCatalogoMedicamentosTratamiento();
+
 function datosFormularioEstudio() {
   return {
     nombre: valorCampo("estudioNombre"),
@@ -2526,6 +2678,10 @@ async function cargarNotasRapidasPaciente() {
 
 document.getElementById("guardarTratamiento")?.addEventListener("click", guardarTratamientoPaciente);
 document.getElementById("limpiarTratamiento")?.addEventListener("click", limpiarFormularioTratamiento);
+document.getElementById("abrirMedicamentoManual")?.addEventListener("click", abrirMedicamentoManual);
+document.getElementById("cerrarMedicamentoManual")?.addEventListener("click", cerrarMedicamentoManual);
+document.getElementById("cancelarMedicamentoManual")?.addEventListener("click", cerrarMedicamentoManual);
+document.getElementById("guardarMedicamentoManual")?.addEventListener("click", guardarMedicamentoManual);
 document.getElementById("guardarEstudio")?.addEventListener("click", guardarEstudioPaciente);
 document.getElementById("limpiarEstudio")?.addEventListener("click", limpiarFormularioEstudio);
 document.getElementById("guardarNotaRapida")?.addEventListener("click", guardarNotaRapidaPaciente);
@@ -2549,6 +2705,9 @@ document.getElementById("guardarIngresoPaciente")?.addEventListener("click", gua
 document.getElementById("limpiarIngresoPaciente")?.addEventListener("click", limpiarIngresoPacienteDesdeModal);
 document.getElementById("modalIngresoPaciente")?.addEventListener("click", (e) => {
   if (e.target.id === "modalIngresoPaciente") cerrarSelectorIngresoPaciente();
+});
+document.getElementById("modalMedicamentoManual")?.addEventListener("click", (e) => {
+  if (e.target.id === "modalMedicamentoManual") cerrarMedicamentoManual();
 });
 
 async function generarCodigoVinculacionDesdeMedico() {

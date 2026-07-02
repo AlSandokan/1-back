@@ -716,6 +716,26 @@ textarea{
   accent-color: #38bdf8;
 }
 
+.ayuda-catalogo-medicamento {
+  display: none;
+  margin-top: 6px;
+  color: #7dd3fc;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ayuda-catalogo-medicamento.visible {
+  display: block;
+}
+
+.ayuda-catalogo-medicamento.alerta {
+  color: #fbbf24;
+}
+
+.panel-medicamento-manual textarea {
+  min-height: 92px;
+}
+
 @media(max-width:900px){
   .form-grid,
   .panel-doble,

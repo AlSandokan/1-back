@@ -456,7 +456,11 @@
 
         <input id="tratamientoId" type="hidden">
         <div class="form-grid">
-          <label>Medicamento<input id="tratamientoMedicamento" placeholder="Ej. Sertralina"></label>
+          <label>Medicamento
+            <input id="tratamientoMedicamento" placeholder="Ej. Sertralina, tabletas de 50 mg." list="catalogoMedicamentosPsiquiatricos">
+            <datalist id="catalogoMedicamentosPsiquiatricos"></datalist>
+            <small id="estadoCatalogoMedicamento" class="ayuda-catalogo-medicamento"></small>
+          </label>
           <label>Via<input id="tratamientoVia" placeholder="Ej. via oral" list="opcionesViaTratamiento"></label>
           <datalist id="opcionesViaTratamiento">
             <option value="via oral"></option>
@@ -482,6 +486,7 @@
           <textarea id="tratamientoObservaciones" placeholder="Respuesta, tolerancia, indicaciones y comentarios clinicos."></textarea>
         </label>
         <div class="form-actions">
+          <button id="abrirMedicamentoManual" type="button" class="boton-secundario">Añadir medicamento al catálogo</button>
           <button id="guardarTratamiento" type="button">Guardar tratamiento</button>
         </div>
       </div>
@@ -552,6 +557,33 @@
 
   </main>
 
+</div>
+
+<div id="modalMedicamentoManual" class="modal-ingreso" aria-hidden="true">
+  <div class="panel-ingreso panel-medicamento-manual" role="dialog" aria-modal="true" aria-labelledby="tituloMedicamentoManual">
+    <div class="panel-ingreso-header">
+      <div>
+        <p>Catálogo farmacológico</p>
+        <h3 id="tituloMedicamentoManual">Añadir medicamento manual</h3>
+      </div>
+      <button id="cerrarMedicamentoManual" type="button" aria-label="Cerrar">×</button>
+    </div>
+
+    <div class="form-grid">
+      <label>Medicamento<input id="medicamentoManualNombre" placeholder="Ej. Sertralina"></label>
+      <label>Presentación<input id="medicamentoManualPresentacion" placeholder="Ej. tabletas de 50 mg"></label>
+      <label>Clase<input id="medicamentoManualClase" placeholder="Ej. ISRS"></label>
+      <label>Dosis habitual<input id="medicamentoManualDosisHabitual" placeholder="Ej. 50-200 mg/dia"></label>
+    </div>
+    <label>Notas clínicas
+      <textarea id="medicamentoManualNotas" placeholder="Indicaciones, vigilancia o comentarios breves."></textarea>
+    </label>
+
+    <div class="panel-ingreso-actions">
+      <button id="guardarMedicamentoManual" type="button">Guardar en catálogo</button>
+      <button id="cancelarMedicamentoManual" type="button" class="boton-secundario">Cancelar</button>
+    </div>
+  </div>
 </div>
 
 <div id="modalIngresoPaciente" class="modal-ingreso" aria-hidden="true">
